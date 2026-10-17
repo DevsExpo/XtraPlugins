@@ -1,0 +1,46 @@
+{
+  "name": "XtraPlugins",
+  "version": "2.0.0",
+  "description": "Comprehensive modular suite of lifestyle, media synthesis, deep OSINT, system automation, and everyday utilities for Friday.",
+  "author": "Friday Team",
+  "dependencies": ["httpx"],
+  "subcategories": {
+    "media": {
+      "name": "Media & Graphics",
+      "path": "media",
+      "description": "Carbon graphics, image collages, photo manipulation, quotes, and OCR",
+      "dependencies": ["pillow", "httpx"]
+    },
+    "search_osint": {
+      "name": "Search & OSINT",
+      "path": "search_osint",
+      "description": "Web search, Wikipedia, IMDb movies, deep OSINT, CTF tools, and IP lookup",
+      "dependencies": ["httpx", "beautifulsoup4"]
+    },
+    "utilities": {
+      "name": "Everyday Utilities",
+      "path": "utilities",
+      "description": "Country data, IFSC search, math solver, PDF generator, and disposable email",
+      "dependencies": ["httpx", "qrcode", "pypdf", "sympy", "pillow"]
+    },
+    "system": {
+      "name": "System & Automation",
+      "path": "system",
+      "description": "Archive compression, Google Drive downloader, and AsyncIOScheduler night mode",
+      "dependencies": ["apscheduler", "aiofiles"]
+    },
+    "lifestyle": {
+      "name": "Lifestyle & Transit",
+      "path": "lifestyle",
+      "description": "Calendar, static maps, turn-by-turn routing, transit tracker, and todo manager",
+      "dependencies": ["httpx", "geopy"]
+    },
+    "botbased": {
+      "name": "Bot-Based Federations & Automations",
+      "path": "botbased",
+      "description": "Multi-federation ban and unban automation conversing with Rose bot across multiple federations",
+      "dependencies": []
+    }
+  },
+  "min_friday_version": "1.0.0"
+}

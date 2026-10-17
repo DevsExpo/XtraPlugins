@@ -1,0 +1,2 @@
+apscheduler>=3.10.4
+aiofiles>=23.2.0

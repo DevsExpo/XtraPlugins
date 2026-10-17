@@ -1,0 +1,5 @@
+httpx>=0.25.0
+qrcode>=7.4.2
+pypdf>=3.17.0
+sympy>=1.12
+pillow>=10.0.0
