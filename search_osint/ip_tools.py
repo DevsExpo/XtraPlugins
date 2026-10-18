@@ -6,8 +6,6 @@
 #
 # All rights reserved.
 
-import socket
-import datetime
 from typing import Optional, Dict, Any
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
@@ -15,6 +13,7 @@ from Main.core.types.message import Message
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     HAS_HTTPX = False

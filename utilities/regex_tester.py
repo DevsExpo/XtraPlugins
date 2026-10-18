@@ -33,9 +33,13 @@ async def regex_test_cmd(c: Client, m: Message):
             pattern_str = parts[0]
             target_str = parts[1]
         else:
-            return await m.handle_message("⚠️ <b>Usage:</b> <code>.regex &lt;pattern&gt; &lt;text_to_match&gt;</code> or reply to text.")
+            return await m.handle_message(
+                "⚠️ <b>Usage:</b> <code>.regex &lt;pattern&gt; &lt;text_to_match&gt;</code> or reply to text."
+            )
     else:
-        return await m.handle_message("⚠️ <b>Usage:</b> <code>.regex &lt;pattern&gt; &lt;text_to_match&gt;</code> or reply to text.")
+        return await m.handle_message(
+            "⚠️ <b>Usage:</b> <code>.regex &lt;pattern&gt; &lt;text_to_match&gt;</code> or reply to text."
+        )
 
     try:
         regex = re.compile(pattern_str)
@@ -68,8 +72,6 @@ async def regex_test_cmd(c: Client, m: Message):
 
     report = (
         f"🎯 <b>Regex Evaluation:</b> 🟢 <b>{len(matches)} match(es)</b>\n"
-        f"• <b>Pattern:</b> <code>{html.escape(pattern_str)}</code>\n\n"
-        + "\n".join(lines)
-        + overflow
+        f"• <b>Pattern:</b> <code>{html.escape(pattern_str)}</code>\n\n" + "\n".join(lines) + overflow
     )
     await m.handle_message(report)

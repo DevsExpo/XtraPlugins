@@ -11,7 +11,6 @@ import datetime
 from typing import Optional, Dict, Any
 from telethon.tl.types import ChatBannedRights
 from telethon.tl.functions.messages import EditChatDefaultBannedRightsRequest
-from telethon.errors import ChatAdminRequiredError, UserAdminInvalidError
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
@@ -118,8 +117,15 @@ async def apply_night_unlock(chat_id: int, custom_msg: Optional[str] = None):
         print(f"[NightMode] Error unlocking chat {chat_id}: {e}")
 
 
-def _schedule_chat_jobs(chat_id: int, start_time: str, end_time: str, tz: str = "UTC", mode: str = "full",
-                        lock_msg: Optional[str] = None, unlock_msg: Optional[str] = None):
+def _schedule_chat_jobs(
+    chat_id: int,
+    start_time: str,
+    end_time: str,
+    tz: str = "UTC",
+    mode: str = "full",
+    lock_msg: Optional[str] = None,
+    unlock_msg: Optional[str] = None,
+):
     """Register cron jobs in AsyncIOScheduler."""
     shour, smin = [int(x) for x in start_time.split(":")]
     ehour, emin = [int(x) for x in end_time.split(":")]
@@ -177,10 +183,12 @@ async def set_night_mode(c: Client, m: Message):
 
     # Verify user is admin
     if not await _is_admin(c, chat_id, user_id):
-        return await m.handle_message("🛡️ <b>Admin Permission Required:</b> Only chat administrators can configure Night Mode.")
+        return await m.handle_message(
+            "🛡️ <b>Admin Permission Required:</b> Only chat administrators can configure Night Mode."
+        )
 
     raw = m.user_input.strip()
-    
+
     # Parse options
     tz = "UTC"
     mode = "full"
@@ -214,7 +222,9 @@ async def set_night_mode(c: Client, m: Message):
     start_time, end_time = tokens[0], tokens[1]
     time_regex = r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$"
     if not re.match(time_regex, start_time) or not re.match(time_regex, end_time):
-        return await m.handle_message("❌ Invalid time format. Please use 24-hour HH:MM (e.g. <code>23:00</code>, <code>07:30</code>).")
+        return await m.handle_message(
+            "❌ Invalid time format. Please use 24-hour HH:MM (e.g. <code>23:00</code>, <code>07:30</code>)."
+        )
 
     msg = await m.handle_message("⏳ Configuring Night Mode schedule with <code>AsyncIOScheduler</code>...")
 
@@ -282,7 +292,9 @@ async def disable_night_mode(c: Client, m: Message):
     except Exception:
         pass
 
-    await m.handle_message("🔓 <b>Night Mode Disabled:</b> Automated quiet hours removed and group permissions restored.")
+    await m.handle_message(
+        "🔓 <b>Night Mode Disabled:</b> Automated quiet hours removed and group permissions restored."
+    )
 
 
 @Friday.register_on_cmd(
@@ -299,13 +311,19 @@ async def check_night_status(c: Client, m: Message):
     chat_id = m.chat_id
     data = await nightmode_db.find_one({"_id": str(chat_id)})
     if not data or not data.get("enabled"):
-        return await m.handle_message("ℹ️ Night Mode is currently <b>Disabled</b> in this group.\nEnable via <code>.nightmode 23:00 07:00</code>.")
+        return await m.handle_message(
+            "ℹ️ Night Mode is currently <b>Disabled</b> in this group.\nEnable via <code>.nightmode 23:00 07:00</code>."
+        )
 
     lock_job = scheduler.get_job(f"nightlock_{chat_id}")
     unlock_job = scheduler.get_job(f"nightunlock_{chat_id}")
 
-    next_lock = lock_job.next_run_time.strftime("%Y-%m-%d %H:%M:%S %Z") if lock_job and lock_job.next_run_time else "N/A"
-    next_unlock = unlock_job.next_run_time.strftime("%Y-%m-%d %H:%M:%S %Z") if unlock_job and unlock_job.next_run_time else "N/A"
+    next_lock = (
+        lock_job.next_run_time.strftime("%Y-%m-%d %H:%M:%S %Z") if lock_job and lock_job.next_run_time else "N/A"
+    )
+    next_unlock = (
+        unlock_job.next_run_time.strftime("%Y-%m-%d %H:%M:%S %Z") if unlock_job and unlock_job.next_run_time else "N/A"
+    )
 
     report = (
         "🌙 <b>Group Night Mode Status</b>\n\n"

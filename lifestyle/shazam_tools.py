@@ -7,13 +7,13 @@
 # All rights reserved.
 
 import os
-from typing import Optional
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
 from Main.core.types.message import Message
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     HAS_HTTPX = False
@@ -34,7 +34,17 @@ async def identify_song(c: Client, m: Message):
         return await m.handle_message("❌ <code>httpx</code> is required for song identification.")
 
     rm = m.reply_to_message or (await m.get_reply_message() if hasattr(m, "get_reply_message") else None)
-    if not rm or not (rm.audio or rm.voice or rm.video or rm.video_note or (rm.file and rm.file.mime_type and (rm.file.mime_type.startswith("audio/") or rm.file.mime_type.startswith("video/")))):
+    if not rm or not (
+        rm.audio
+        or rm.voice
+        or rm.video
+        or rm.video_note
+        or (
+            rm.file
+            and rm.file.mime_type
+            and (rm.file.mime_type.startswith("audio/") or rm.file.mime_type.startswith("video/"))
+        )
+    ):
         return await m.handle_message("❌ Please reply to an audio track, voice message, or video.")
 
     msg = await m.handle_message("🎧 Listening and identifying song fingerprint...")

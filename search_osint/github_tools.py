@@ -6,14 +6,13 @@
 #
 # All rights reserved.
 
-import urllib.parse
-from typing import Optional
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
 from Main.core.types.message import Message
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     HAS_HTTPX = False
@@ -23,7 +22,7 @@ def _clean_repo_slug(raw: str) -> str:
     s = raw.strip()
     for prefix in ("https://github.com/", "http://github.com/", "git@github.com:"):
         if s.startswith(prefix):
-            s = s[len(prefix):]
+            s = s[len(prefix) :]
             break
     s = s.rstrip("/")
     if s.endswith(".git"):

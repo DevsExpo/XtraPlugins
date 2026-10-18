@@ -7,13 +7,13 @@
 # All rights reserved.
 
 import urllib.parse
-from typing import Optional, Tuple
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
 from Main.core.types.message import Message
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     HAS_HTTPX = False
@@ -53,7 +53,9 @@ async def wiki_search(c: Client, m: Message):
 
     try:
         async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
-            res = await client.get(api_url, headers={"User-Agent": "FridayUserbot/1.0 (https://github.com/FridaySoftware)"})
+            res = await client.get(
+                api_url, headers={"User-Agent": "FridayUserbot/1.0 (https://github.com/FridaySoftware)"}
+            )
 
         if res.status_code == 404:
             # Fallback to search query API
@@ -71,9 +73,11 @@ async def wiki_search(c: Client, m: Message):
                     if rres.status_code == 200:
                         res = rres
                     else:
-                        suggestions = "\n".join([f"• <a href='{sdata[3][i]}'>{sdata[1][i]}</a>" for i in range(len(sdata[1]))])
+                        suggestions = "\n".join(
+                            [f"• <a href='{sdata[3][i]}'>{sdata[1][i]}</a>" for i in range(len(sdata[1]))]
+                        )
                         return await msg.edit_msg(
-                            f"📖 <b>Wikipedia Matches for \"{query}\":</b>\n\n{suggestions}\n\n<i>Search with exact title above.</i>"
+                            f'📖 <b>Wikipedia Matches for "{query}":</b>\n\n{suggestions}\n\n<i>Search with exact title above.</i>'
                         )
             if res.status_code == 404:
                 return await msg.edit_msg(f"❌ No Wikipedia article found for <code>{query}</code>.")
@@ -85,8 +89,12 @@ async def wiki_search(c: Client, m: Message):
         title = data.get("title", query)
         description = data.get("description", "")
         extract = data.get("extract", "No summary available.")
-        page_url = data.get("content_urls", {}).get("desktop", {}).get("page", f"https://{lang}.wikipedia.org/wiki/{encoded_title}")
-        
+        page_url = (
+            data.get("content_urls", {})
+            .get("desktop", {})
+            .get("page", f"https://{lang}.wikipedia.org/wiki/{encoded_title}")
+        )
+
         # Check for thumbnail image
         thumbnail_obj = data.get("originalimage") or data.get("thumbnail")
         image_url = thumbnail_obj.get("source") if thumbnail_obj else None

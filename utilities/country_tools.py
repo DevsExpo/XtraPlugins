@@ -6,15 +6,15 @@
 #
 # All rights reserved.
 
-import json
 import urllib.parse
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Any
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
 from Main.core.types.message import Message
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     HAS_HTTPX = False

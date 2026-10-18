@@ -13,6 +13,7 @@ from Main.core.types.message import Message
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     HAS_HTTPX = False
@@ -104,6 +105,7 @@ async def _fetch_weather_report(query: str):
     )
 
     from telethon import custom
+
     buttons = [
         [
             custom.Button.inline("🔄 Refresh", f"wttr_ref:{query}".encode("utf-8")),
@@ -137,6 +139,7 @@ async def weather_report(c: Client, m: Message):
     if "-basic" not in m.user_args and "-text" not in m.user_args:
         try:
             from Main.utils.inline_helper import send_inline_widget
+
             if await send_inline_widget(c, m, f"weather:{query}"):
                 return
         except Exception:
@@ -157,7 +160,6 @@ async def weather_report(c: Client, m: Message):
 
 if getattr(Friday, "bot", None):
     import re
-    from telethon import custom
     from Main.utils.custom_filters import filters
     from Main.utils.inline_helper import is_authorized_cb
 
@@ -191,8 +193,6 @@ if getattr(Friday, "bot", None):
                     pass
             return
 
-
-
         if data.startswith("wttr_ref:"):
             city = data.split(":", 1)[1]
             await cq.answer(f"🔄 Updating weather for {city}...")
@@ -201,4 +201,3 @@ if getattr(Friday, "bot", None):
                 await cq.edit(report, buttons=buttons or [], parse_mode="html")
             except Exception:
                 pass
-

@@ -10,7 +10,6 @@ import os
 import json
 import shutil
 import asyncio
-import subprocess
 from typing import Optional, Tuple
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
@@ -49,7 +48,9 @@ async def _run_command_async(cmd: list) -> Tuple[int, str, str]:
 async def _download_replied_video(m: Message) -> Tuple[Optional[str], Optional[str]]:
     """Helper to download replied video or document video."""
     rm = m.reply_to_message or (await m.get_reply_message() if hasattr(m, "get_reply_message") else None)
-    if not rm or not (rm.video or rm.video_note or (rm.file and rm.file.mime_type and rm.file.mime_type.startswith("video/"))):
+    if not rm or not (
+        rm.video or rm.video_note or (rm.file and rm.file.mime_type and rm.file.mime_type.startswith("video/"))
+    ):
         return None, None
     os.makedirs("temp/xtra_videos", exist_ok=True)
     file_path = await rm.download_media("temp/xtra_videos/")
@@ -82,8 +83,10 @@ async def video_info(c: Client, m: Message):
         if FFPROBE_AVAILABLE:
             cmd = [
                 "ffprobe",
-                "-v", "quiet",
-                "-print_format", "json",
+                "-v",
+                "quiet",
+                "-print_format",
+                "json",
                 "-show_format",
                 "-show_streams",
                 download_path,
@@ -173,10 +176,14 @@ async def video_trim(c: Client, m: Message):
         cmd = [
             "ffmpeg",
             "-y",
-            "-ss", str(start_pos),
-            "-to", str(end_pos),
-            "-i", file_path,
-            "-c", "copy",
+            "-ss",
+            str(start_pos),
+            "-to",
+            str(end_pos),
+            "-i",
+            file_path,
+            "-c",
+            "copy",
             out_path,
         ]
         code, stdout, stderr = await _run_command_async(cmd)
@@ -185,11 +192,16 @@ async def video_trim(c: Client, m: Message):
             cmd = [
                 "ffmpeg",
                 "-y",
-                "-ss", str(start_pos),
-                "-to", str(end_pos),
-                "-i", file_path,
-                "-c:v", "libx264",
-                "-c:a", "aac",
+                "-ss",
+                str(start_pos),
+                "-to",
+                str(end_pos),
+                "-i",
+                file_path,
+                "-c:v",
+                "libx264",
+                "-c:a",
+                "aac",
                 out_path,
             ]
             code, stdout, stderr = await _run_command_async(cmd)
@@ -205,11 +217,9 @@ async def video_trim(c: Client, m: Message):
             reply_to=m.id,
         )
         try:
-
             await msg.delete()
 
         except Exception:
-
             pass
     except Exception as e:
         await msg.edit_msg(f"❌ Error during trimming: <code>{e}</code>")
@@ -249,10 +259,13 @@ async def video_extract_audio(c: Client, m: Message):
         cmd = [
             "ffmpeg",
             "-y",
-            "-i", file_path,
+            "-i",
+            file_path,
             "-vn",
-            "-acodec", "libmp3lame",
-            "-q:a", "2",
+            "-acodec",
+            "libmp3lame",
+            "-q:a",
+            "2",
             out_path,
         ]
         code, stdout, stderr = await _run_command_async(cmd)
@@ -268,11 +281,9 @@ async def video_extract_audio(c: Client, m: Message):
             reply_to=m.id,
         )
         try:
-
             await msg.delete()
 
         except Exception:
-
             pass
     except Exception as e:
         await msg.edit_msg(f"❌ Error: <code>{e}</code>")
@@ -304,7 +315,6 @@ async def video_mute(c: Client, m: Message):
     if not file_path:
         return await msg.edit_msg("❌ Please reply to a valid video file.")
 
-    ext = os.path.splitext(file_path)[1] or ".mp4"
     out_path = f"temp/xtra_videos/muted_{os.path.basename(file_path)}"
 
     try:
@@ -312,8 +322,10 @@ async def video_mute(c: Client, m: Message):
         cmd = [
             "ffmpeg",
             "-y",
-            "-i", file_path,
-            "-c:v", "copy",
+            "-i",
+            file_path,
+            "-c:v",
+            "copy",
             "-an",
             out_path,
         ]
@@ -330,11 +342,9 @@ async def video_mute(c: Client, m: Message):
             reply_to=m.id,
         )
         try:
-
             await msg.delete()
 
         except Exception:
-
             pass
     except Exception as e:
         await msg.edit_msg(f"❌ Error: <code>{e}</code>")
@@ -379,9 +389,12 @@ async def video_to_gif(c: Client, m: Message):
         cmd = [
             "ffmpeg",
             "-y",
-            "-t", "15",  # Cap at 15s to prevent gigabyte GIFs
-            "-i", file_path,
-            "-vf", filter_str,
+            "-t",
+            "15",  # Cap at 15s to prevent gigabyte GIFs
+            "-i",
+            file_path,
+            "-vf",
+            filter_str,
             out_path,
         ]
         code, stdout, stderr = await _run_command_async(cmd)
@@ -396,11 +409,9 @@ async def video_to_gif(c: Client, m: Message):
             reply_to=m.id,
         )
         try:
-
             await msg.delete()
 
         except Exception:
-
             pass
     except Exception as e:
         await msg.edit_msg(f"❌ Error: <code>{e}</code>")

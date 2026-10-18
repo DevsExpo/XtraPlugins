@@ -7,7 +7,6 @@
 # All rights reserved.
 
 import urllib.parse
-from typing import List, Dict
 from bs4 import BeautifulSoup
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
@@ -15,6 +14,7 @@ from Main.core.types.message import Message
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     HAS_HTTPX = False
@@ -68,8 +68,9 @@ async def search_shopping(c: Client, m: Message):
                 store = "Amazon" if "amazon" in href.lower() else ("eBay" if "ebay" in href.lower() else "Store")
                 if title and href:
                     results_list.append(
-                        f"• <b><a href='{href}'>{title}</a></b> ({store})\n"
-                        f"  <i>{snippet[:140]}...</i>" if len(snippet) > 140 else f"• <b><a href='{href}'>{title}</a></b> ({store})\n  <i>{snippet}</i>"
+                        f"• <b><a href='{href}'>{title}</a></b> ({store})\n  <i>{snippet[:140]}...</i>"
+                        if len(snippet) > 140
+                        else f"• <b><a href='{href}'>{title}</a></b> ({store})\n  <i>{snippet}</i>"
                     )
 
         if results_list:

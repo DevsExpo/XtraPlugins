@@ -6,6 +6,7 @@
 #
 # All rights reserved.
 
+import time
 import urllib.parse
 from typing import Optional, Tuple
 from Main import Friday
@@ -14,6 +15,7 @@ from Main.core.types.message import Message
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     HAS_HTTPX = False
@@ -79,10 +81,7 @@ async def translate_message(c: Client, m: Message):
         if not translated_text:
             return await msg.edit_msg("❌ Translation failed or returned empty response.")
 
-        report = (
-            f"🌐 <b>Translation ({src.upper()} ➔ {target_lang.upper()})</b>\n\n"
-            f"{translated_text}"
-        )
+        report = f"🌐 <b>Translation ({src.upper()} ➔ {target_lang.upper()})</b>\n\n{translated_text}"
 
         token = str(int(time.time() * 1000))[-8:]
         _trans_cache[token] = text_to_translate
@@ -90,6 +89,7 @@ async def translate_message(c: Client, m: Message):
         if "-basic" not in m.user_args and "-text" not in m.user_args:
             try:
                 from Main.utils.inline_helper import send_inline_widget
+
                 if await send_inline_widget(c, m, f"trans:{target_lang}:{token}"):
                     try:
                         await msg.delete()
@@ -127,11 +127,15 @@ if getattr(Friday, "bot", None):
 
     def _make_lang_buttons(current_lang: str, token: str):
         row1 = [
-            custom.Button.inline(f"• {label} •" if code == current_lang else label, f"tr_{code}:{token}".encode("utf-8"))
+            custom.Button.inline(
+                f"• {label} •" if code == current_lang else label, f"tr_{code}:{token}".encode("utf-8")
+            )
             for label, code in LANG_BUTTONS[:3]
         ]
         row2 = [
-            custom.Button.inline(f"• {label} •" if code == current_lang else label, f"tr_{code}:{token}".encode("utf-8"))
+            custom.Button.inline(
+                f"• {label} •" if code == current_lang else label, f"tr_{code}:{token}".encode("utf-8")
+            )
             for label, code in LANG_BUTTONS[3:]
         ]
         return [row1, row2, [custom.Button.inline("✖ Close", b"tr_cls")]]
@@ -151,10 +155,7 @@ if getattr(Friday, "bot", None):
         if not translated_text:
             return
 
-        report = (
-            f"🌐 <b>Translation ({src.upper()} ➔ {target_lang.upper()})</b>\n\n"
-            f"{translated_text}"
-        )
+        report = f"🌐 <b>Translation ({src.upper()} ➔ {target_lang.upper()})</b>\n\n{translated_text}"
         buttons = _make_lang_buttons(target_lang, token)
         builder = iq.builder
         res = builder.article(
@@ -181,7 +182,6 @@ if getattr(Friday, "bot", None):
                     pass
             return
 
-
         m = re.match(r"^tr_([a-z]{2}):(\w+)", data)
         if not m:
             return
@@ -197,13 +197,9 @@ if getattr(Friday, "bot", None):
         if not translated_text:
             return await cq.answer("❌ Translation failed.", alert=True)
 
-        report = (
-            f"🌐 <b>Translation ({src.upper()} ➔ {new_lang.upper()})</b>\n\n"
-            f"{translated_text}"
-        )
+        report = f"🌐 <b>Translation ({src.upper()} ➔ {new_lang.upper()})</b>\n\n{translated_text}"
         buttons = _make_lang_buttons(new_lang, token)
         try:
             await cq.edit(report, buttons=buttons, parse_mode="html")
         except Exception:
             pass
-

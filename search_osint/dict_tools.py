@@ -15,6 +15,7 @@ from Main.core.types.message import Message
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     HAS_HTTPX = False
@@ -114,7 +115,7 @@ async def dictionary_search(c: Client, m: Message):
                 report = (
                     f"📖 <b>Urban Slang Result:</b> <code>{word}</code>\n\n"
                     f"<b>Definition:</b>\n{definition[:1200]}\n\n"
-                    f"<b>Example:</b>\n<i>\"{example[:600]}\"</i>\n\n"
+                    f'<b>Example:</b>\n<i>"{example[:600]}"</i>\n\n'
                     f"👍 {urban_item.get('thumbs_up', 0)} | 👎 {urban_item.get('thumbs_down', 0)}"
                 )
                 return await msg.edit_msg(report)
@@ -144,9 +145,9 @@ async def dictionary_search(c: Client, m: Message):
                 ex_text = d.get("example")
                 entry = f"  <b>{i}.</b> {d_text}"
                 if ex_text:
-                    entry += f"\n     <i>Example: \"{ex_text}\"</i>"
+                    entry += f'\n     <i>Example: "{ex_text}"</i>'
                 lines.append(entry)
-            
+
             syns = m_item.get("synonyms", [])
             if syns and isinstance(syns, list):
                 all_synonyms.extend(syns[:4])
@@ -158,9 +159,7 @@ async def dictionary_search(c: Client, m: Message):
         phonetic_str = f" <i>/{phonetic}/</i>" if phonetic else ""
 
         report = (
-            f"📚 <b>Word:</b> <code>{word.capitalize()}</code>{phonetic_str}\n\n"
-            + "\n\n".join(sections)
-            + synonym_str
+            f"📚 <b>Word:</b> <code>{word.capitalize()}</code>{phonetic_str}\n\n" + "\n\n".join(sections) + synonym_str
         )
 
         await msg.edit_msg(report)
@@ -220,7 +219,7 @@ async def urban_search(c: Client, m: Message):
         report = (
             f"🏙️ <b>Urban Dictionary:</b> <code>{word}</code>\n\n"
             f"<b>Definition:</b>\n{def_text[:1200]}\n\n"
-            f"<b>Example:</b>\n<i>\"{example_text[:500]}\"</i>\n\n"
+            f'<b>Example:</b>\n<i>"{example_text[:500]}"</i>\n\n'
             f"👍 <b>{thumbs_up}</b> | 👎 <b>{thumbs_down}</b> • <i>By {author}</i>"
         )
         await msg.edit_msg(report)
@@ -250,7 +249,7 @@ async def rhyme_search(c: Client, m: Message):
 
         rhyme_pills = ", ".join([f"<code>{r}</code>" for r in rhymes])
         report = (
-            f"🎵 <b>Words that Rhyme with \"{word.capitalize()}\":</b>\n\n"
+            f'🎵 <b>Words that Rhyme with "{word.capitalize()}":</b>\n\n'
             f"{rhyme_pills}\n\n"
             f"<i>Found {len(rhymes)} rhyming pairs.</i>"
         )
@@ -281,7 +280,7 @@ async def synonym_search(c: Client, m: Message):
 
         pills = ", ".join([f"<code>{s}</code>" for s in syns])
         report = (
-            f"📖 <b>Thesaurus Synonyms for \"{word.capitalize()}\":</b>\n\n"
+            f'📖 <b>Thesaurus Synonyms for "{word.capitalize()}":</b>\n\n'
             f"{pills}\n\n"
             f"<i>Total alternative terms: {len(syns)}</i>"
         )

@@ -15,6 +15,7 @@ from Main.core.types.message import Message
 
 try:
     import rembg
+
     HAS_REMBG = True
 except ImportError:
     HAS_REMBG = False
@@ -70,7 +71,11 @@ async def remove_bg_cmd(c: Client, m: Message):
         return await m.handle_message("❌ Please reply to a photo or image sticker to remove its background.")
 
     bg_color = (m.user_input or "").strip() or None
-    status_text = f"🪄 Removing background (AI offline)..." if not bg_color else f"🪄 Removing background & applying <b>{bg_color}</b> fill..."
+    status_text = (
+        "🪄 Removing background (AI offline)..."
+        if not bg_color
+        else f"🪄 Removing background & applying <b>{bg_color}</b> fill..."
+    )
     msg = await m.handle_message(status_text)
 
     out_dir = os.path.join("temp", "rmbg")
@@ -93,7 +98,11 @@ async def remove_bg_cmd(c: Client, m: Message):
             f.write(processed_bytes)
 
         target_chat = m.chat_id or getattr(m.chat, "id", None)
-        engine_badge = "Rembg AI (Local)" if HAS_REMBG else "Color Mask (Install rembg for AI model: <code>pip install rembg</code>)"
+        engine_badge = (
+            "Rembg AI (Local)"
+            if HAS_REMBG
+            else "Color Mask (Install rembg for AI model: <code>pip install rembg</code>)"
+        )
         caption = f"✨ <b>Background Removed</b>\n• Engine: <code>{engine_badge}</code>"
         if bg_color:
             caption += f"\n• Color Fill: <code>{bg_color}</code>"

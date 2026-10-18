@@ -7,15 +7,14 @@ import os
 import shutil
 import asyncio
 import subprocess
-from typing import Optional
 
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
 from Main.core.types.message import Message
-from telethon.tl.types import DocumentAttributeAudio, DocumentAttributeVideo
 
 try:
     import imageio_ffmpeg
+
     FFMPEG_PATH = imageio_ffmpeg.get_ffmpeg_exe()
 except Exception:
     FFMPEG_PATH = shutil.which("ffmpeg") or "ffmpeg"
@@ -45,7 +44,9 @@ async def audio_cut_cmd(c: Client, m: Message):
 
     args = (m.user_input or "").strip().split()
     if len(args) < 2:
-        return await m.handle_message("⚠️ <b>Usage:</b> <code>.cut &lt;start_time&gt; &lt;end_time&gt;</code>\nExample: <code>.cut 00:30 01:15</code>")
+        return await m.handle_message(
+            "⚠️ <b>Usage:</b> <code>.cut &lt;start_time&gt; &lt;end_time&gt;</code>\nExample: <code>.cut 00:30 01:15</code>"
+        )
 
     start_t, end_t = args[0], args[1]
     msg = await m.handle_message(f"✂️ Trimming audio from <code>{start_t}</code> to <code>{end_t}</code>...")
@@ -62,23 +63,29 @@ async def audio_cut_cmd(c: Client, m: Message):
 
     ffmpeg = _get_ffmpeg()
     cmd = [
-        ffmpeg, "-y",
-        "-ss", str(start_t),
-        "-to", str(end_t),
-        "-i", input_file,
-        "-c:a", "libmp3lame",
-        "-b:a", "320k",
+        ffmpeg,
+        "-y",
+        "-ss",
+        str(start_t),
+        "-to",
+        str(end_t),
+        "-i",
+        input_file,
+        "-c:a",
+        "libmp3lame",
+        "-b:a",
+        "320k",
         output_file,
     ]
 
     try:
-        proc = await asyncio.create_subprocess_exec(
-            *cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
+        proc = await asyncio.create_subprocess_exec(*cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         await proc.communicate()
 
         if not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
-            return await msg.edit_msg("❌ Trimming failed. Please check timestamp format (e.g. <code>00:30 01:45</code>).")
+            return await msg.edit_msg(
+                "❌ Trimming failed. Please check timestamp format (e.g. <code>00:30 01:45</code>)."
+            )
 
         await msg.edit_msg("⬆️ Uploading trimmed audio...")
         target_chat = m.chat_id or getattr(m.chat, "id", None)
@@ -104,7 +111,7 @@ async def audio_cut_cmd(c: Client, m: Message):
     ["tag", "audiotag", "id3"],
     cmd_help={
         "help": "Edit ID3 tags of an audio track (title, artist, album, year).",
-        "example": "tag -title \"My Song\" -artist \"Artist\" (reply to audio)",
+        "example": 'tag -title "My Song" -artist "Artist" (reply to audio)',
     },
     requires_reply=True,
 )
@@ -115,7 +122,9 @@ async def audio_tag_cmd(c: Client, m: Message):
 
     raw = (m.user_input or "").strip()
     if not raw:
-        return await m.handle_message("⚠️ <b>Usage:</b> <code>.tag -title \"Title\" -artist \"Artist\" -album \"Album\"</code>")
+        return await m.handle_message(
+            '⚠️ <b>Usage:</b> <code>.tag -title "Title" -artist "Artist" -album "Album"</code>'
+        )
 
     title = None
     artist = None
@@ -204,12 +213,17 @@ async def to_voice_cmd(c: Client, m: Message):
 
     ffmpeg = _get_ffmpeg()
     cmd = [
-        ffmpeg, "-y",
-        "-i", input_file,
+        ffmpeg,
+        "-y",
+        "-i",
+        input_file,
         "-vn",
-        "-c:a", "libopus",
-        "-b:a", "64k",
-        "-vbr", "on",
+        "-c:a",
+        "libopus",
+        "-b:a",
+        "64k",
+        "-vbr",
+        "on",
         output_file,
     ]
 
@@ -266,14 +280,22 @@ async def to_videonote_cmd(c: Client, m: Message):
     # Crop to 1:1 aspect ratio, max 480x480, max 60 seconds
     ffmpeg = _get_ffmpeg()
     cmd = [
-        ffmpeg, "-y",
-        "-t", "60",
-        "-i", input_file,
-        "-vf", "crop='min(iw,ih)':'min(iw,ih)',scale=480:480",
-        "-c:v", "libx264",
-        "-preset", "fast",
-        "-c:a", "aac",
-        "-b:a", "128k",
+        ffmpeg,
+        "-y",
+        "-t",
+        "60",
+        "-i",
+        input_file,
+        "-vf",
+        "crop='min(iw,ih)':'min(iw,ih)',scale=480:480",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "fast",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "128k",
         output_file,
     ]
 

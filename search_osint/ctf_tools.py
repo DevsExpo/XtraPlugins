@@ -8,7 +8,6 @@
 
 import os
 import re
-from typing import Dict, Any, List, Optional
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
 from Main.core.types.message import Message
@@ -16,6 +15,7 @@ from Main.utils.essentials import Essentials
 
 try:
     from PIL import Image, ExifTags
+
     HAS_PIL = True
 except ImportError:
     HAS_PIL = False
@@ -90,16 +90,20 @@ async def ctf_media_forensics(c: Client, m: Message):
             eoi_idx = raw_data.rfind(b"\xff\xd9")
             if eoi_idx != -1 and (eoi_idx + 2) < len(raw_data):
                 extra_bytes = len(raw_data) - (eoi_idx + 2)
-                appended_warning = f"\n⚠️ <b>Steganography Alert:</b> <code>{extra_bytes} bytes</code> appended after JPEG EOI marker!"
+                appended_warning = (
+                    f"\n⚠️ <b>Steganography Alert:</b> <code>{extra_bytes} bytes</code> appended after JPEG EOI marker!"
+                )
         elif raw_data.startswith(b"\x89PNG"):
             iend_idx = raw_data.rfind(b"IEND\xaeB`\x82")
             if iend_idx != -1 and (iend_idx + 8) < len(raw_data):
                 extra_bytes = len(raw_data) - (iend_idx + 8)
-                appended_warning = f"\n⚠️ <b>Steganography Alert:</b> <code>{extra_bytes} bytes</code> appended after PNG IEND chunk!"
+                appended_warning = (
+                    f"\n⚠️ <b>Steganography Alert:</b> <code>{extra_bytes} bytes</code> appended after PNG IEND chunk!"
+                )
 
         # 3. Scan for strings matching CTF flags (flag{...}, ctf{...})
         flag_matches = re.findall(rb"(?:flag|ctf|FRIDAY)\{[a-zA-Z0-9_\-\.\@\!]+\}", raw_data, re.IGNORECASE)
-        found_flags = list(set([f.decode('utf-8', errors='ignore') for f in flag_matches]))
+        found_flags = list(set([f.decode("utf-8", errors="ignore") for f in flag_matches]))
 
         flags_block = ""
         if found_flags:

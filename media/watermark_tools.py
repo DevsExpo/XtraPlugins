@@ -15,6 +15,7 @@ from Main.core.types.message import Message
 
 try:
     import imageio_ffmpeg
+
     FFMPEG_PATH = imageio_ffmpeg.get_ffmpeg_exe()
 except Exception:
     FFMPEG_PATH = shutil.which("ffmpeg") or "ffmpeg"
@@ -80,7 +81,9 @@ async def watermark_cmd(c: Client, m: Message):
 
     text = raw.strip()
     if not text:
-        return await m.handle_message("⚠️ <b>Usage:</b> <code>.watermark &lt;text&gt; [-pos bottom-right|center|top-left]</code>")
+        return await m.handle_message(
+            "⚠️ <b>Usage:</b> <code>.watermark &lt;text&gt; [-pos bottom-right|center|top-left]</code>"
+        )
 
     msg = await m.handle_message(f"🏷 Stamping watermark <code>{text}</code>...")
     out_dir = os.path.join("temp", "watermark")
@@ -108,11 +111,16 @@ async def watermark_cmd(c: Client, m: Message):
             drawtext_filter = f"drawtext=text='{escaped_text}':fontcolor=white@0.9:box=1:boxcolor=black@0.5:boxborderw=8:fontsize=28:x={x_expr}:y={y_expr}"
 
             cmd = [
-                ffmpeg, "-y",
-                "-i", input_file,
-                "-vf", drawtext_filter,
-                "-c:a", "copy",
-                "-preset", "fast",
+                ffmpeg,
+                "-y",
+                "-i",
+                input_file,
+                "-vf",
+                drawtext_filter,
+                "-c:a",
+                "copy",
+                "-preset",
+                "fast",
                 output_file,
             ]
             proc = await asyncio.create_subprocess_exec(*cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

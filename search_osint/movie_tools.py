@@ -7,9 +7,10 @@
 # All rights reserved.
 
 import os
+import time
 import json
 import urllib.parse
-from typing import Optional, Dict, Any, List
+from typing import Dict, Any
 from bs4 import BeautifulSoup
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
@@ -17,6 +18,7 @@ from Main.core.types.message import Message
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     HAS_HTTPX = False
@@ -45,7 +47,9 @@ async def _scrape_imdb_details(imdb_id: str) -> Dict[str, Any]:
                     if rating_obj:
                         details["rating"] = rating_obj.get("ratingValue")
                         details["rating_count"] = rating_obj.get("ratingCount")
-                    details["genre"] = ", ".join(data.get("genre", [])) if isinstance(data.get("genre"), list) else data.get("genre")
+                    details["genre"] = (
+                        ", ".join(data.get("genre", [])) if isinstance(data.get("genre"), list) else data.get("genre")
+                    )
                     directors = data.get("director", [])
                     if isinstance(directors, list):
                         details["director"] = ", ".join([d.get("name", "") for d in directors if "name" in d])
@@ -103,7 +107,7 @@ async def movie_search(c: Client, m: Message):
                     f"<b>• Genre:</b> {genre}\n"
                     f"<b>• Director:</b> {director}\n"
                     f"<b>• Cast:</b> {actors}\n\n"
-                    f"<b>Synopsis:</b>\n<i>\"{plot}\"</i>\n\n"
+                    f'<b>Synopsis:</b>\n<i>"{plot}"</i>\n\n'
                     f"🔗 <a href='{imdb_url}'>View Details on IMDb</a>"
                 )
                 if poster and poster.startswith("http"):
@@ -158,8 +162,14 @@ async def movie_search(c: Client, m: Message):
         if not poster_url and extra.get("image"):
             poster_url = extra.get("image")
 
-        page_link = f"https://www.imdb.com/title/{imdb_id}/" if imdb_id else f"https://www.imdb.com/find?q={urllib.parse.quote(title)}"
-        trailer_link = f"https://www.youtube.com/results?search_query={urllib.parse.quote(title + ' ' + str(year) + ' trailer')}"
+        page_link = (
+            f"https://www.imdb.com/title/{imdb_id}/"
+            if imdb_id
+            else f"https://www.imdb.com/find?q={urllib.parse.quote(title)}"
+        )
+        trailer_link = (
+            f"https://www.youtube.com/results?search_query={urllib.parse.quote(title + ' ' + str(year) + ' trailer')}"
+        )
 
         caption = (
             f"🎬 <b>{title} ({year})</b>\n"
@@ -167,7 +177,7 @@ async def movie_search(c: Client, m: Message):
             f"{genre_str}"
             f"{director_str}"
             f"<b>• Starring:</b> {stars}\n\n"
-            f"<b>Synopsis:</b>\n<i>\"{plot}\"</i>\n"
+            f'<b>Synopsis:</b>\n<i>"{plot}"</i>\n'
         )
 
         token = str(int(time.time() * 1000))[-8:]
@@ -181,6 +191,7 @@ async def movie_search(c: Client, m: Message):
         if "-basic" not in m.user_args and "-text" not in m.user_args:
             try:
                 from Main.utils.inline_helper import send_inline_widget
+
                 if await send_inline_widget(c, m, f"movie:{token}"):
                     try:
                         await msg.delete()
@@ -240,7 +251,6 @@ if getattr(Friday, "bot", None):
         await iq.answer([res], cache_time=0)
 
 
-
 @Friday.register_on_cmd(
     ["trending", "topmovies"],
     cmd_help={
@@ -266,7 +276,9 @@ async def trending_movies(c: Client, m: Message):
                 y = it.get("y", "N/A")
                 s = it.get("s", "N/A")
                 mid = it.get("id")
-                lines.append(f"<b>{i}.</b> <a href='https://www.imdb.com/title/{mid}/'><b>{t}</b></a> ({y})\n   <i>Cast: {s}</i>")
+                lines.append(
+                    f"<b>{i}.</b> <a href='https://www.imdb.com/title/{mid}/'><b>{t}</b></a> ({y})\n   <i>Cast: {s}</i>"
+                )
 
             report = (
                 "🔥 <b>Trending Titles on IMDb:</b>\n\n"

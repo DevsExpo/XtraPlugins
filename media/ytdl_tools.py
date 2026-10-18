@@ -1,6 +1,6 @@
-# Copyright (C) 2021-present by FridaySoftware@Github, < https://github.com/FridaySoftware >.
+# Copyright (C) 2021-present by DevsExpo@Github, < https://github.com/DevsExpo >.
 #
-# This file is part of < https://github.com/FridaySoftware/Friday > project,
+# This file is part of < https://github.com/DevsExpo/Friday > project,
 # and is released under the "GNU v3.0 License Agreement".
 # Please see < https://github.com/Altriux/Friday/blob/main/LICENSE >
 #
@@ -10,7 +10,7 @@ import os
 import re
 import time
 import asyncio
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
@@ -18,15 +18,18 @@ from Main.core.types.message import Message
 
 try:
     import yt_dlp
+
     HAS_YTDL = True
 except ImportError:
     HAS_YTDL = False
 
 try:
     import imageio_ffmpeg
+
     FFMPEG_PATH = imageio_ffmpeg.get_ffmpeg_exe()
 except Exception:
     import shutil
+
     FFMPEG_PATH = shutil.which("ffmpeg") or "ffmpeg"
 
 
@@ -52,6 +55,7 @@ def _format_count(num: Optional[int]) -> str:
 
 def _get_ffmpeg_cmd() -> Optional[str]:
     import shutil
+
     path = shutil.which("ffmpeg")
     if path:
         return path
@@ -234,12 +238,8 @@ def _parse_ytdl_flags(raw_input: str) -> Dict[str, Any]:
     return flags
 
 
-# ==========================================
-# 1. Universal Media Downloader (.ytdl / .dl)
-# ==========================================
-
 @Friday.register_on_cmd(
-    ["ytdl", "ytvideo", "ytv", "dl", "download", "ig", "reel", "tiktok", "tt", "twitter", "tw", "reddit", "pin", "pinterest", "fb"],
+    ["ytdl", "ytvideo", "ytv", "ig", "reel", "tiktok", "tt", "twitter", "tw", "reddit", "pinterest", "fb"],
     cmd_help={
         "help": "Universal Social Media & Video Downloader: YouTube, Instagram Reels, TikTok, Twitter/X, Reddit, Pinterest, Facebook with advanced flags.",
         "example": "dl https://youtu.be/... -1080p -doc\ndl https://instagram.com/reel/...\nytdl lofi hip hop -audio -mp3 -320k\nytdl https://youtu.be/... -ss 00:30 -to 01:15",
@@ -248,12 +248,16 @@ def _parse_ytdl_flags(raw_input: str) -> Dict[str, Any]:
 )
 async def youtube_download_video(c: Client, m: Message):
     if not HAS_YTDL:
-        return await m.handle_message("❌ <code>yt-dlp</code> is required. Install via <code>pip install yt-dlp</code>.")
+        return await m.handle_message(
+            "❌ <code>yt-dlp</code> is required. Install via <code>pip install yt-dlp</code>."
+        )
 
     flags = _parse_ytdl_flags(m.user_input)
     query = flags["clean_query"]
     if not query:
-        return await m.handle_message("❌ Please provide a media URL (YouTube, Instagram, TikTok, X, Reddit, etc.) or search query.")
+        return await m.handle_message(
+            "❌ Please provide a media URL (YouTube, Instagram, TikTok, X, Reddit, etc.) or search query."
+        )
 
     # Redirect to audio extraction if -audio / -a flag provided
     if flags["audio_only"]:
@@ -309,7 +313,9 @@ async def youtube_download_video(c: Client, m: Message):
 
         def _extract_and_download():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                search_target = query if query.startswith("http://") or query.startswith("https://") else f"ytsearch1:{query}"
+                search_target = (
+                    query if query.startswith("http://") or query.startswith("https://") else f"ytsearch1:{query}"
+                )
                 info = ydl.extract_info(search_target, download=not flags["info_only"])
                 if "entries" in info and info["entries"]:
                     return info["entries"][0]
@@ -410,23 +416,27 @@ async def youtube_download_video(c: Client, m: Message):
             pass
 
 
-# ==========================================
-# 2. Audio & Song Downloader (.ytmp3 / .song)
-# ==========================================
-
 async def _download_audio_worker(c: Client, m: Message, flags: Dict[str, Any]):
     query = flags["clean_query"]
-    msg = await m.handle_message(f"🎵 Searching audio <b>{query}</b> ({flags['audio_format'].upper()} @ {flags['audio_bitrate']}kbps)...")
+    msg = await m.handle_message(
+        f"🎵 Searching audio <b>{query}</b> ({flags['audio_format'].upper()} @ {flags['audio_bitrate']}kbps)..."
+    )
     out_dir = os.path.join("temp", "xtra_ytdl")
     os.makedirs(out_dir, exist_ok=True)
     out_tmpl = os.path.join(out_dir, "%(id)s.%(ext)s")
 
     ffmpeg_bin = _get_ffmpeg_cmd()
-    postprocessors = [{
-        "key": "FFmpegExtractAudio",
-        "preferredcodec": flags["audio_format"],
-        "preferredquality": flags["audio_bitrate"],
-    }] if ffmpeg_bin else []
+    postprocessors = (
+        [
+            {
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": flags["audio_format"],
+                "preferredquality": flags["audio_bitrate"],
+            }
+        ]
+        if ffmpeg_bin
+        else []
+    )
 
     ydl_opts: Dict[str, Any] = {
         "format": "bestaudio/best",
@@ -450,7 +460,9 @@ async def _download_audio_worker(c: Client, m: Message, flags: Dict[str, Any]):
 
         def _extract_and_download_audio():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                search_target = query if query.startswith("http://") or query.startswith("https://") else f"ytsearch1:{query}"
+                search_target = (
+                    query if query.startswith("http://") or query.startswith("https://") else f"ytsearch1:{query}"
+                )
                 info = ydl.extract_info(search_target, download=True)
                 if "entries" in info and info["entries"]:
                     return info["entries"][0]
@@ -524,7 +536,9 @@ async def _download_audio_worker(c: Client, m: Message, flags: Dict[str, Any]):
 )
 async def youtube_download_audio(c: Client, m: Message):
     if not HAS_YTDL:
-        return await m.handle_message("❌ <code>yt-dlp</code> is required. Install via <code>pip install yt-dlp</code>.")
+        return await m.handle_message(
+            "❌ <code>yt-dlp</code> is required. Install via <code>pip install yt-dlp</code>."
+        )
 
     flags = _parse_ytdl_flags(m.user_input)
     flags["audio_only"] = True
@@ -533,10 +547,6 @@ async def youtube_download_audio(c: Client, m: Message):
 
     await _download_audio_worker(c, m, flags)
 
-
-# ==========================================
-# 3. YouTube Account & Token Configuration
-# ==========================================
 
 @Friday.register_on_cmd(
     ["setyttoken", "yttoken"],
@@ -572,7 +582,9 @@ async def set_yt_token_cmd(c: Client, m: Message):
         {"$set": {"po_token": token, "updated_at": time.time()}},
         upsert=True,
     )
-    return await msg.edit_msg("✅ <b>YouTube PO Token Saved!</b> Anti-bot checks will now authenticate with this token.")
+    return await msg.edit_msg(
+        "✅ <b>YouTube PO Token Saved!</b> Anti-bot checks will now authenticate with this token."
+    )
 
 
 @Friday.register_on_cmd(
@@ -620,7 +632,9 @@ async def set_yt_cookies_cmd(c: Client, m: Message):
         {"$set": {"cookies_text": content, "updated_at": time.time()}},
         upsert=True,
     )
-    return await msg.edit_msg("✅ <b>YouTube Account Cookies Saved!</b> Age-restricted and member-only content is now unlocked.")
+    return await msg.edit_msg(
+        "✅ <b>YouTube Account Cookies Saved!</b> Age-restricted and member-only content is now unlocked."
+    )
 
 
 @Friday.register_on_cmd(
@@ -643,10 +657,6 @@ async def rm_yt_token_cmd(c: Client, m: Message):
                 pass
     return await msg.edit_msg("🗑️ <b>YouTube Authentication Reset:</b> Tokens and cookies purged.")
 
-
-# ==========================================
-# 4. YouTube Search & Metadata
-# ==========================================
 
 @Friday.register_on_cmd(
     ["ytsearch", "yts"],
@@ -712,6 +722,7 @@ async def youtube_search_list(c: Client, m: Message):
         if "-basic" not in m.user_args and "-text" not in m.user_args:
             try:
                 from Main.utils.inline_helper import send_inline_widget
+
                 if await send_inline_widget(c, m, f"yts:{token}"):
                     try:
                         await msg.delete()
@@ -774,7 +785,7 @@ async def youtube_info_inspect(c: Client, m: Message):
         res_str = ", ".join([f"{r}p" for r in resolutions[:6]]) if resolutions else "Standard"
 
         desc = (info.get("description") or "").strip()
-        desc_snippet = f"<i>\"{desc[:200]}...\"</i>" if desc else "<i>No description</i>"
+        desc_snippet = f'<i>"{desc[:200]}..."</i>' if desc else "<i>No description</i>"
 
         report = (
             f"ℹ️ <b>YouTube Video Analysis:</b>\n\n"
@@ -793,10 +804,6 @@ async def youtube_info_inspect(c: Client, m: Message):
     except Exception as e:
         await msg.edit_msg(f"❌ YouTube info error: <code>{e}</code>")
 
-
-# ==========================================
-# 5. Interactive Inline YouTube Search Handlers
-# ==========================================
 
 _yts_cache = {}
 

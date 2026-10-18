@@ -40,6 +40,18 @@
       "path": "botbased",
       "description": "Multi-federation ban and unban automation conversing with Rose bot across multiple federations",
       "dependencies": []
+    },
+    "ai": {
+      "name": "AI Suite",
+      "path": "ai",
+      "description": "Multi-provider AI chat (Groq, Gemini, Ollama), AI tools, and zero-key Pollinations image generation",
+      "dependencies": ["httpx", "groq", "google-generativeai"]
+    },
+    "games": {
+      "name": "Games & Entertainment",
+      "path": "games",
+      "description": "Interactive Tic-Tac-Toe with minimax AI and full Unicode Chess with 2-tap move selection",
+      "dependencies": ["chess"]
     }
   },
   "min_friday_version": "1.0.0"

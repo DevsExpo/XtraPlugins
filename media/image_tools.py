@@ -7,7 +7,6 @@
 # All rights reserved.
 
 import os
-import io
 import random
 import asyncio
 from pathlib import Path
@@ -19,6 +18,7 @@ from Main.core.types.message import Message
 
 try:
     from PIL import Image, ImageOps, ImageFilter, ImageDraw, ImageFont
+
     HAS_PIL = True
 except ImportError:
     HAS_PIL = False
@@ -32,7 +32,9 @@ def _check_pil():
 async def _download_replied_image(m: Message) -> Tuple[Optional[str], Optional[str]]:
     """Helper to download replied photo or sticker and return local path and temp dir."""
     rm = m.reply_to_message or (await m.get_reply_message() if hasattr(m, "get_reply_message") else None)
-    if not rm or not (rm.photo or rm.sticker or (rm.file and rm.file.mime_type and rm.file.mime_type.startswith("image/"))):
+    if not rm or not (
+        rm.photo or rm.sticker or (rm.file and rm.file.mime_type and rm.file.mime_type.startswith("image/"))
+    ):
         return None, None
     os.makedirs("temp/xtra_images", exist_ok=True)
     file_path = await rm.download_media("temp/xtra_images/")
@@ -65,12 +67,16 @@ async def image_resize(c: Client, m: Message):
     out_path = f"{file_path}_resized.png"
     try:
         loop = asyncio.get_running_loop()
+
         def _process():
             with Image.open(file_path) as img:
                 res = img.resize((w, h), Image.Resampling.LANCZOS)
                 res.save(out_path, format="PNG")
+
         await loop.run_in_executor(None, _process)
-        await c.send_file(m.chat.id, out_path, caption=f"📐 Resized to <code>{w}x{h}</code>", reply_to=m.reply_to_message.id)
+        await c.send_file(
+            m.chat.id, out_path, caption=f"📐 Resized to <code>{w}x{h}</code>", reply_to=m.reply_to_message.id
+        )
         await msg.delete_if_self()
     except Exception as e:
         await msg.edit_msg(f"❌ Failed to resize image: <code>{e}</code>")
@@ -102,12 +108,16 @@ async def image_blur(c: Client, m: Message):
     out_path = f"{file_path}_blur.png"
     try:
         loop = asyncio.get_running_loop()
+
         def _process():
             with Image.open(file_path) as img:
                 blurred = img.filter(ImageFilter.GaussianBlur(radius=radius))
                 blurred.save(out_path, format="PNG")
+
         await loop.run_in_executor(None, _process)
-        await c.send_file(m.chat.id, out_path, caption=f"🌫️ Blurred (radius: <code>{radius}</code>)", reply_to=m.reply_to_message.id)
+        await c.send_file(
+            m.chat.id, out_path, caption=f"🌫️ Blurred (radius: <code>{radius}</code>)", reply_to=m.reply_to_message.id
+        )
         await msg.delete_if_self()
     except Exception as e:
         await msg.edit_msg(f"❌ Failed to blur image: <code>{e}</code>")
@@ -135,11 +145,13 @@ async def image_invert(c: Client, m: Message):
     out_path = f"{file_path}_inverted.png"
     try:
         loop = asyncio.get_running_loop()
+
         def _process():
             with Image.open(file_path) as img:
                 rgb_img = img.convert("RGB")
                 inv = ImageOps.invert(rgb_img)
                 inv.save(out_path, format="PNG")
+
         await loop.run_in_executor(None, _process)
         await c.send_file(m.chat.id, out_path, caption="🔄 Inverted colors", reply_to=m.reply_to_message.id)
         await msg.delete_if_self()
@@ -169,10 +181,12 @@ async def image_gray(c: Client, m: Message):
     out_path = f"{file_path}_gray.png"
     try:
         loop = asyncio.get_running_loop()
+
         def _process():
             with Image.open(file_path) as img:
                 gray = ImageOps.grayscale(img)
                 gray.save(out_path, format="PNG")
+
         await loop.run_in_executor(None, _process)
         await c.send_file(m.chat.id, out_path, caption="🎞️ Grayscale conversion", reply_to=m.reply_to_message.id)
         await msg.delete_if_self()
@@ -210,6 +224,7 @@ async def image_flip(c: Client, m: Message):
     out_path = f"{file_path}_flipped.png"
     try:
         loop = asyncio.get_running_loop()
+
         def _process():
             with Image.open(file_path) as img:
                 if vertical:
@@ -217,6 +232,7 @@ async def image_flip(c: Client, m: Message):
                 else:
                     flipped = ImageOps.mirror(img)
                 flipped.save(out_path, format="PNG")
+
         await loop.run_in_executor(None, _process)
         direction = "Vertically" if vertical else "Horizontally"
         await c.send_file(m.chat.id, out_path, caption=f"🪞 Flipped {direction}", reply_to=m.reply_to_message.id)
@@ -251,10 +267,12 @@ async def image_rotate(c: Client, m: Message):
     out_path = f"{file_path}_rotated.png"
     try:
         loop = asyncio.get_running_loop()
+
         def _process():
             with Image.open(file_path) as img:
                 rotated = img.rotate(degrees, expand=True)
                 rotated.save(out_path, format="PNG")
+
         await loop.run_in_executor(None, _process)
         await c.send_file(m.chat.id, out_path, caption=f"🔄 Rotated {degrees}°", reply_to=m.reply_to_message.id)
         await msg.delete_if_self()
@@ -284,6 +302,7 @@ async def image_circle(c: Client, m: Message):
     out_path = f"{file_path}_circle.png"
     try:
         loop = asyncio.get_running_loop()
+
         def _process():
             with Image.open(file_path) as img:
                 img = img.convert("RGBA")
@@ -301,6 +320,7 @@ async def image_circle(c: Client, m: Message):
                 result = Image.new("RGBA", (size, size), (0, 0, 0, 0))
                 result.paste(img, (0, 0), mask=mask)
                 result.save(out_path, format="PNG")
+
         await loop.run_in_executor(None, _process)
         await c.send_file(m.chat.id, out_path, caption="⚪ Circular avatar crop", reply_to=m.reply_to_message.id)
         await msg.delete_if_self()
@@ -332,6 +352,7 @@ async def image_watermark(c: Client, m: Message):
     out_path = f"{file_path}_watermark.png"
     try:
         loop = asyncio.get_running_loop()
+
         def _process():
             with Image.open(file_path) as img:
                 img = img.convert("RGBA")
@@ -354,8 +375,11 @@ async def image_watermark(c: Client, m: Message):
                 draw.text((x + 2, y + 2), watermark_text, fill=(0, 0, 0, 180), font=font)
                 draw.text((x, y), watermark_text, fill=(255, 255, 255, 230), font=font)
                 img.save(out_path, format="PNG")
+
         await loop.run_in_executor(None, _process)
-        await c.send_file(m.chat.id, out_path, caption=f"✍️ Watermarked: <i>{watermark_text}</i>", reply_to=m.reply_to_message.id)
+        await c.send_file(
+            m.chat.id, out_path, caption=f"✍️ Watermarked: <i>{watermark_text}</i>", reply_to=m.reply_to_message.id
+        )
         await msg.delete_if_self()
     except Exception as e:
         await msg.edit_msg(f"❌ Failed to add watermark: <code>{e}</code>")
@@ -388,10 +412,12 @@ async def image_compress(c: Client, m: Message):
     out_path = f"{file_path}_compressed.jpg"
     try:
         loop = asyncio.get_running_loop()
+
         def _process():
             with Image.open(file_path) as img:
                 rgb_img = img.convert("RGB")
                 rgb_img.save(out_path, format="JPEG", quality=quality, optimize=True)
+
         await loop.run_in_executor(None, _process)
 
         compressed_size = os.path.getsize(out_path)
@@ -439,13 +465,17 @@ async def image_convert(c: Client, m: Message):
     out_path = f"{file_path}.{fmt}"
     try:
         loop = asyncio.get_running_loop()
+
         def _process():
             with Image.open(file_path) as img:
                 if target_pil_fmt == "JPEG" and img.mode in ("RGBA", "P"):
                     img = img.convert("RGB")
                 img.save(out_path, format=target_pil_fmt)
+
         await loop.run_in_executor(None, _process)
-        await c.send_file(m.chat.id, out_path, caption=f"📁 Converted to <b>{fmt.upper()}</b>", reply_to=m.reply_to_message.id)
+        await c.send_file(
+            m.chat.id, out_path, caption=f"📁 Converted to <b>{fmt.upper()}</b>", reply_to=m.reply_to_message.id
+        )
         await msg.delete_if_self()
     except Exception as e:
         await msg.edit_msg(f"❌ Failed to convert image: <code>{e}</code>")
@@ -456,12 +486,30 @@ async def image_convert(c: Client, m: Message):
 
 
 LOGO_COLOURS = [
-    (255, 0, 0), (255, 64, 0), (255, 128, 0), (255, 191, 0),
-    (255, 255, 0), (191, 255, 0), (128, 255, 0), (64, 255, 0),
-    (0, 255, 0), (0, 255, 64), (0, 255, 128), (0, 255, 191),
-    (0, 255, 255), (0, 191, 255), (0, 128, 255), (0, 64, 255),
-    (0, 0, 255), (64, 0, 255), (128, 0, 255), (191, 0, 255),
-    (255, 0, 255), (255, 0, 191), (255, 0, 128), (255, 0, 64),
+    (255, 0, 0),
+    (255, 64, 0),
+    (255, 128, 0),
+    (255, 191, 0),
+    (255, 255, 0),
+    (191, 255, 0),
+    (128, 255, 0),
+    (64, 255, 0),
+    (0, 255, 0),
+    (0, 255, 64),
+    (0, 255, 128),
+    (0, 255, 191),
+    (0, 255, 255),
+    (0, 191, 255),
+    (0, 128, 255),
+    (0, 64, 255),
+    (0, 0, 255),
+    (64, 0, 255),
+    (128, 0, 255),
+    (191, 0, 255),
+    (255, 0, 255),
+    (255, 0, 191),
+    (255, 0, 128),
+    (255, 0, 64),
 ]
 
 
@@ -494,6 +542,7 @@ async def logo_gen(c: Client, m: Message):
     out_file = os.path.join(temp_dir, f"logo_{m.id}_{int(start_)}.png")
 
     try:
+
         def _render():
             assets_path = Path(__file__).resolve().parents[1] / "assets"
             blank_img_path = assets_path / "images" / "blank_black.png"
@@ -539,11 +588,9 @@ async def logo_gen(c: Client, m: Message):
             reply_to=m.id,
         )
         try:
-
             await msg.delete()
 
         except Exception:
-
             pass
     except Exception as e:
         await msg.edit_msg(f"❌ Failed to generate logo: <code>{e}</code>")
@@ -553,4 +600,3 @@ async def logo_gen(c: Client, m: Message):
                 os.remove(out_file)
             except Exception:
                 pass
-

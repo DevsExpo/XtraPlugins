@@ -9,7 +9,7 @@
 import os
 import math
 import urllib.parse
-from typing import Tuple, Optional, Dict, Any, List
+from typing import Tuple, Optional
 from telethon.tl.types import InputMediaGeoPoint, InputGeoPoint
 
 from Main import Friday
@@ -18,6 +18,7 @@ from Main.core.types.message import Message
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     HAS_HTTPX = False
@@ -28,10 +29,7 @@ def _haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> T
     r_km = 6371.0
     dlat = math.radians(lat2 - lat1)
     dlon = math.radians(lon2 - lon1)
-    a = (
-        math.sin(dlat / 2) ** 2
-        + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2
-    )
+    a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     km = r_km * c
     miles = km * 0.621371
@@ -40,7 +38,9 @@ def _haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> T
 
 async def _geocode(query: str) -> Optional[dict]:
     """Geocode an address or landmark using Nominatim OpenStreetMap."""
-    url = f"https://nominatim.openstreetmap.org/search?q={urllib.parse.quote(query)}&format=json&addressdetails=1&limit=1"
+    url = (
+        f"https://nominatim.openstreetmap.org/search?q={urllib.parse.quote(query)}&format=json&addressdetails=1&limit=1"
+    )
     headers = {"User-Agent": "FridayUserbot/1.0 (https://github.com/FridaySoftware/Friday)"}
     async with httpx.AsyncClient(timeout=15.0) as client:
         res = await client.get(url, headers=headers)
@@ -135,11 +135,9 @@ async def map_lookup(c: Client, m: Message):
                 reply_to=m.id,
             )
             try:
-
                 await msg.delete()
 
             except Exception:
-
                 pass
             try:
                 os.remove(map_img)
@@ -152,7 +150,7 @@ async def map_lookup(c: Client, m: Message):
 
 
 @Friday.register_on_cmd(
-    ["pin", "sendlocation", "geopin"],
+    ["geopin", "locpin", "sendlocation"],
     cmd_help={
         "help": "Send an interactive Telegram native location pin for any address or landmark.",
         "example": "pin Taj Mahal, Agra\npin 48.8584 2.2945",
@@ -186,11 +184,9 @@ async def send_pin(c: Client, m: Message):
             reply_to=m.id,
         )
         try:
-
             await msg.delete()
 
         except Exception:
-
             pass
     except Exception as e:
         await msg.edit_msg(f"❌ Failed to send pin: <code>{e}</code>")
@@ -210,7 +206,9 @@ async def route_directions(c: Client, m: Message):
 
     query = m.user_input.strip()
     if "|" not in query:
-        return await m.handle_message("⚠️ Please provide origin and destination separated by '|':\n<code>.directions Berlin | Munich</code>")
+        return await m.handle_message(
+            "⚠️ Please provide origin and destination separated by '|':\n<code>.directions Berlin | Munich</code>"
+        )
 
     origin_str, dest_str = [x.strip() for x in query.split("|", 1)]
     msg = await m.handle_message(f"🚗 Calculating route from <b>{origin_str}</b> to <b>{dest_str}</b>...")
@@ -228,7 +226,9 @@ async def route_directions(c: Client, m: Message):
         lat2, lon2 = float(dest["lat"]), float(dest["lon"])
 
         # Query Open Source Routing Machine (OSRM)
-        osrm_url = f"http://router.project-osrm.org/route/v1/driving/{lon1},{lat1};{lon2},{lat2}?overview=false&steps=true"
+        osrm_url = (
+            f"http://router.project-osrm.org/route/v1/driving/{lon1},{lat1};{lon2},{lat2}?overview=false&steps=true"
+        )
         async with httpx.AsyncClient(timeout=20.0) as client:
             res = await client.get(osrm_url)
 
@@ -262,7 +262,9 @@ async def route_directions(c: Client, m: Message):
 
         steps_block = "\n".join(step_lines) if step_lines else "Follow highway signage."
 
-        gmaps_nav = f"https://www.google.com/maps/dir/?api=1&origin={lat1},{lon1}&destination={lat2},{lon2}&travelmode=driving"
+        gmaps_nav = (
+            f"https://www.google.com/maps/dir/?api=1&origin={lat1},{lon1}&destination={lat2},{lon2}&travelmode=driving"
+        )
 
         report = (
             f"🚗 <b>Driving Navigation Route:</b>\n\n"
@@ -292,7 +294,9 @@ async def map_distance(c: Client, m: Message):
 
     query = m.user_input.strip()
     if "|" not in query:
-        return await m.handle_message("⚠️ Please provide two locations separated by '|':\n<code>.distance London | Paris</code>")
+        return await m.handle_message(
+            "⚠️ Please provide two locations separated by '|':\n<code>.distance London | Paris</code>"
+        )
 
     loc1_str, loc2_str = [x.strip() for x in query.split("|", 1)]
     msg = await m.handle_message(f"📏 Calculating distance between <b>{loc1_str}</b> and <b>{loc2_str}</b>...")

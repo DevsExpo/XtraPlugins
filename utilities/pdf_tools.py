@@ -7,7 +7,6 @@
 # All rights reserved.
 
 import os
-import re
 import asyncio
 import logging
 from typing import Optional, List, Tuple
@@ -21,12 +20,14 @@ logger = logging.getLogger("friday.pdf_tools")
 
 try:
     import fitz  # PyMuPDF
+
     HAS_FITZ = True
 except ImportError:
     HAS_FITZ = False
 
 try:
     from PIL import Image, ImageDraw, ImageFont
+
     HAS_PIL = True
 except ImportError:
     HAS_PIL = False
@@ -83,10 +84,12 @@ def _text_to_pdf(text: str, out_pdf_path: str) -> None:
         line_height = 16
 
         for i in range(0, max(1, len(lines)), lines_per_page):
-            chunk = lines[i:i + lines_per_page]
+            chunk = lines[i : i + lines_per_page]
             page = doc.new_page(width=page_width, height=page_height)
             # Header line
-            page.draw_line(fitz.Point(margin_x, 40), fitz.Point(page_width - margin_x, 40), color=(0.16, 0.5, 0.72), width=2)
+            page.draw_line(
+                fitz.Point(margin_x, 40), fitz.Point(page_width - margin_x, 40), color=(0.16, 0.5, 0.72), width=2
+            )
             y = margin_y
             for line in chunk:
                 page.insert_text(fitz.Point(margin_x, y), line, fontsize=10, color=(0.15, 0.15, 0.15))
@@ -102,7 +105,7 @@ def _text_to_pdf(text: str, out_pdf_path: str) -> None:
         lines_per_page = (p_h - (2 * margin)) // line_height
         pages = []
         for i in range(0, max(1, len(lines)), lines_per_page):
-            chunk = lines[i:i + lines_per_page]
+            chunk = lines[i : i + lines_per_page]
             img = Image.new("RGB", (p_w, p_h), "white")
             draw = ImageDraw.Draw(img)
             draw.rectangle([(margin, 50), (p_w - margin, 54)], fill=(41, 128, 185))
@@ -118,6 +121,7 @@ def _text_to_pdf(text: str, out_pdf_path: str) -> None:
 # ==========================================
 # Core Conversion Commands
 # ==========================================
+
 
 @Friday.register_on_cmd(
     ["topdf", "pdf"],
@@ -140,6 +144,7 @@ async def create_pdf(c: Client, m: Message):
             await msg.edit_msg("🖼 Downloading replied image...")
             img_path = await rm.download_media("temp/xtra_pdf/")
             if img_path and os.path.exists(img_path):
+
                 def _conv():
                     if HAS_FITZ:
                         doc = fitz.open()
@@ -154,6 +159,7 @@ async def create_pdf(c: Client, m: Message):
                     elif HAS_PIL:
                         with Image.open(img_path) as im:
                             im.convert("RGB").save(out_pdf, "PDF", resolution=100.0)
+
                 await asyncio.get_running_loop().run_in_executor(None, _conv)
                 if os.path.exists(img_path):
                     os.remove(img_path)
@@ -204,6 +210,7 @@ async def image_to_pdf(c: Client, m: Message):
 # iLovePDF Operations (Merge, Split, Compress)
 # ==========================================
 
+
 @Friday.register_on_cmd(
     ["pdfcompress", "compresspdf"],
     cmd_help={
@@ -222,6 +229,7 @@ async def compress_pdf(c: Client, m: Message):
 
     try:
         orig_size = os.path.getsize(pdf_path)
+
         def _compress():
             doc = fitz.open(pdf_path)
             doc.save(out_pdf, garbage=4, deflate=True, clean=True)
@@ -271,6 +279,7 @@ async def split_pdf(c: Client, m: Message):
     out_pdf = f"temp/xtra_pdf/split_{os.path.basename(pdf_path)}"
 
     try:
+
         def _split():
             doc = fitz.open(pdf_path)
             selected = _parse_page_selection(query, doc.page_count)
@@ -331,6 +340,7 @@ async def delete_pdf_pages(c: Client, m: Message):
     out_pdf = f"temp/xtra_pdf/deleted_{os.path.basename(pdf_path)}"
 
     try:
+
         def _del():
             doc = fitz.open(pdf_path)
             to_delete = _parse_page_selection(query, doc.page_count)
@@ -393,7 +403,9 @@ async def merge_pdf(c: Client, m: Message):
     out_pdf = f"temp/xtra_pdf/merged_{m.id}.pdf"
     try:
         if not pdf2:
-            return await msg.edit_msg("ℹ️ To merge, reply with <code>.pdfmerge</code> to a PDF that itself is a reply to another PDF, or use chained messages.")
+            return await msg.edit_msg(
+                "ℹ️ To merge, reply with <code>.pdfmerge</code> to a PDF that itself is a reply to another PDF, or use chained messages."
+            )
 
         def _merge():
             doc1 = fitz.open(pdf2)
@@ -425,6 +437,7 @@ async def merge_pdf(c: Client, m: Message):
 # Rendering & Extraction (Images, Text)
 # ==========================================
 
+
 @Friday.register_on_cmd(
     ["pdftoimg", "pdf2img", "pdfimages"],
     cmd_help={
@@ -445,6 +458,7 @@ async def pdf_to_images(c: Client, m: Message):
 
     try:
         user_arg = (m.user_input or "1").strip().lower()
+
         def _render():
             doc = fitz.open(pdf_path)
             max_p = doc.page_count
@@ -513,6 +527,7 @@ async def extract_embedded_images(c: Client, m: Message):
     extracted = []
 
     try:
+
         def _extract():
             doc = fitz.open(pdf_path)
             img_list = []
@@ -574,6 +589,7 @@ async def pdf_to_text(c: Client, m: Message):
 
     msg = await m.handle_message("📝 Extracting text from PDF...")
     try:
+
         def _read_text():
             doc = fitz.open(pdf_path)
             full_text = []
@@ -615,6 +631,7 @@ async def pdf_to_text(c: Client, m: Message):
 # Security & Protection (Encrypt, Decrypt)
 # ==========================================
 
+
 @Friday.register_on_cmd(
     ["pdfprotect", "pdfencrypt"],
     cmd_help={
@@ -634,6 +651,7 @@ async def protect_pdf(c: Client, m: Message):
     out_pdf = f"temp/xtra_pdf/protected_{os.path.basename(pdf_path)}"
 
     try:
+
         def _encrypt():
             doc = fitz.open(pdf_path)
             doc.save(out_pdf, encryption=fitz.PDF_ENCRYPT_AES_256, user_pw=password, owner_pw=password, deflate=True)
@@ -676,6 +694,7 @@ async def unlock_pdf(c: Client, m: Message):
     out_pdf = f"temp/xtra_pdf/unlocked_{os.path.basename(pdf_path)}"
 
     try:
+
         def _decrypt():
             doc = fitz.open(pdf_path)
             if doc.is_encrypted:
@@ -703,6 +722,7 @@ async def unlock_pdf(c: Client, m: Message):
 # Modification (Rotate, Watermark, Numbers, Grayscale)
 # ==========================================
 
+
 @Friday.register_on_cmd(
     ["pdfrotate", "rotatepdf"],
     cmd_help={
@@ -728,6 +748,7 @@ async def rotate_pdf(c: Client, m: Message):
     out_pdf = f"temp/xtra_pdf/rotated_{os.path.basename(pdf_path)}"
 
     try:
+
         def _rot():
             doc = fitz.open(pdf_path)
             for page in doc:
@@ -771,6 +792,7 @@ async def watermark_pdf(c: Client, m: Message):
     out_pdf = f"temp/xtra_pdf/watermarked_{os.path.basename(pdf_path)}"
 
     try:
+
         def _wm():
             doc = fitz.open(pdf_path)
             for page in doc:
@@ -819,6 +841,7 @@ async def add_pdf_page_numbers(c: Client, m: Message):
     out_pdf = f"temp/xtra_pdf/numbered_{os.path.basename(pdf_path)}"
 
     try:
+
         def _num():
             doc = fitz.open(pdf_path)
             total = doc.page_count
@@ -863,6 +886,7 @@ async def pdf_to_grayscale(c: Client, m: Message):
     out_pdf = f"temp/xtra_pdf/gray_{os.path.basename(pdf_path)}"
 
     try:
+
         def _gray():
             doc_in = fitz.open(pdf_path)
             doc_out = fitz.open()
@@ -895,6 +919,7 @@ async def pdf_to_grayscale(c: Client, m: Message):
 # Inspection & Studio Interactive Panel
 # ==========================================
 
+
 @Friday.register_on_cmd(
     ["pdfinfo", "pdfspecs"],
     cmd_help={
@@ -910,6 +935,7 @@ async def pdf_info(c: Client, m: Message):
 
     msg = await m.handle_message("🔍 Inspecting PDF metadata...")
     try:
+
         def _inspect():
             doc = fitz.open(pdf_path)
             meta = doc.metadata or {}
@@ -1040,7 +1066,9 @@ async def on_pdf_studio_callback(event):
                 page.set_rotation(page.rotation + 90)
             doc.save(out_pdf, deflate=True)
             doc.close()
-            await c.send_file(chat_id, out_pdf, caption=f"🔄 <b>Rotated 90°:</b> <code>{filename}</code>", reply_to=msg_id)
+            await c.send_file(
+                chat_id, out_pdf, caption=f"🔄 <b>Rotated 90°:</b> <code>{filename}</code>", reply_to=msg_id
+            )
         elif action == "num":
             doc = fitz.open(pdf_path)
             total = doc.page_count
@@ -1050,7 +1078,9 @@ async def on_pdf_studio_callback(event):
                 page.insert_text(point, label, fontsize=9, color=(0.4, 0.4, 0.4))
             doc.save(out_pdf, deflate=True)
             doc.close()
-            await c.send_file(chat_id, out_pdf, caption=f"🔢 <b>Numbered PDF:</b> <code>{filename}</code>", reply_to=msg_id)
+            await c.send_file(
+                chat_id, out_pdf, caption=f"🔢 <b>Numbered PDF:</b> <code>{filename}</code>", reply_to=msg_id
+            )
         elif action == "gray":
             doc_in = fitz.open(pdf_path)
             doc_out = fitz.open()
@@ -1061,7 +1091,9 @@ async def on_pdf_studio_callback(event):
             doc_out.save(out_pdf, garbage=4, deflate=True)
             doc_in.close()
             doc_out.close()
-            await c.send_file(chat_id, out_pdf, caption=f"⚪ <b>Grayscale PDF:</b> <code>{filename}</code>", reply_to=msg_id)
+            await c.send_file(
+                chat_id, out_pdf, caption=f"⚪ <b>Grayscale PDF:</b> <code>{filename}</code>", reply_to=msg_id
+            )
         elif action == "toimg":
             doc = fitz.open(pdf_path)
             pix = doc[0].get_pixmap(dpi=150)
@@ -1083,7 +1115,9 @@ async def on_pdf_studio_callback(event):
                 txt_path = f"temp/xtra_pdf/text_{orig_msg.id}.txt"
                 with open(txt_path, "w", encoding="utf-8") as f:
                     f.write(full_txt)
-                await c.send_file(chat_id, txt_path, caption=f"📝 Text extracted from <code>{filename}</code>", reply_to=msg_id)
+                await c.send_file(
+                    chat_id, txt_path, caption=f"📝 Text extracted from <code>{filename}</code>", reply_to=msg_id
+                )
                 if os.path.exists(txt_path):
                     os.remove(txt_path)
         elif action == "info":
@@ -1091,7 +1125,9 @@ async def on_pdf_studio_callback(event):
             pages = doc.page_count
             dims = f"{int(doc[0].rect.width)} × {int(doc[0].rect.height)}" if pages > 0 else "N/A"
             doc.close()
-            await event.respond(f"📄 <b>Document Specs:</b>\n<b>• Pages:</b> <code>{pages}</code>\n<b>• Size:</b> <code>{Essentials.humanbytes(os.path.getsize(pdf_path))}</code>\n<b>• Dims:</b> <code>{dims} pt</code>")
+            await event.respond(
+                f"📄 <b>Document Specs:</b>\n<b>• Pages:</b> <code>{pages}</code>\n<b>• Size:</b> <code>{Essentials.humanbytes(os.path.getsize(pdf_path))}</code>\n<b>• Dims:</b> <code>{dims} pt</code>"
+            )
         elif action == "imgs":
             doc = fitz.open(pdf_path)
             count = 0

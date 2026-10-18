@@ -7,15 +7,14 @@
 # All rights reserved.
 
 import os
-import io
 import urllib.parse
-from typing import Optional
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
 from Main.core.types.message import Message
 
 try:
     import qrcode
+
     HAS_QRCODE = True
 except ImportError:
     HAS_QRCODE = False
@@ -23,12 +22,14 @@ except ImportError:
 try:
     from PIL import Image
     from pyzbar.pyzbar import decode as pyzbar_decode
+
     HAS_PYZBAR = True
 except ImportError:
     HAS_PYZBAR = False
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     HAS_HTTPX = False
@@ -92,11 +93,9 @@ async def generate_qr(c: Client, m: Message):
             reply_to=m.id,
         )
         try:
-
             await msg.delete()
 
         except Exception:
-
             pass
     except Exception as e:
         await msg.edit_msg(f"❌ Error generating QR code: <code>{e}</code>")
@@ -118,7 +117,9 @@ async def generate_qr(c: Client, m: Message):
 )
 async def scan_qr(c: Client, m: Message):
     rm = m.reply_to_message or (await m.get_reply_message() if hasattr(m, "get_reply_message") else None)
-    if not rm or not (rm.photo or rm.sticker or (rm.file and rm.file.mime_type and rm.file.mime_type.startswith("image/"))):
+    if not rm or not (
+        rm.photo or rm.sticker or (rm.file and rm.file.mime_type and rm.file.mime_type.startswith("image/"))
+    ):
         return await m.handle_message("❌ Please reply to a photo or image containing a QR code.")
 
     msg = await m.handle_message("🔍 Downloading and scanning QR code...")
@@ -166,10 +167,7 @@ async def scan_qr(c: Client, m: Message):
         if not decoded_text:
             return await msg.edit_msg("❌ No QR code could be detected or read in this image.")
 
-        result_msg = (
-            "<b>📱 QR Code Decoded Result:</b>\n\n"
-            f"<code>{decoded_text}</code>"
-        )
+        result_msg = f"<b>📱 QR Code Decoded Result:</b>\n\n<code>{decoded_text}</code>"
         await msg.edit_msg(result_msg)
     except Exception as e:
         await msg.edit_msg(f"❌ Error during QR scanning: <code>{e}</code>")

@@ -8,7 +8,7 @@
 
 import os
 import re
-from typing import Optional, Tuple
+from typing import Optional
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
 from Main.core.types.message import Message
@@ -16,6 +16,7 @@ from Main.utils.essentials import Essentials
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     HAS_HTTPX = False
@@ -54,7 +55,9 @@ async def gdrive_info(c: Client, m: Message):
     try:
         # If API key is configured via env
         if GDRIVE_API_KEY:
-            api_url = f"https://www.googleapis.com/drive/v3/files/{file_id}?fields=id,name,size,mimeType&key={GDRIVE_API_KEY}"
+            api_url = (
+                f"https://www.googleapis.com/drive/v3/files/{file_id}?fields=id,name,size,mimeType&key={GDRIVE_API_KEY}"
+            )
             async with httpx.AsyncClient(timeout=15.0) as client:
                 res = await client.get(api_url)
             if res.status_code == 200:
@@ -127,7 +130,9 @@ async def gdrive_download(c: Client, m: Message):
         async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
             async with client.stream("GET", download_url) as resp:
                 if resp.status_code != 200:
-                    return await msg.edit_msg(f"❌ Failed to stream file (HTTP {resp.status_code}). Ensure link is public.")
+                    return await msg.edit_msg(
+                        f"❌ Failed to stream file (HTTP {resp.status_code}). Ensure link is public."
+                    )
 
                 content_disp = resp.headers.get("content-disposition", "")
                 filename = f"file_{file_id}"
@@ -148,16 +153,14 @@ async def gdrive_download(c: Client, m: Message):
             reply_to=m.id,
         )
         try:
-
             await msg.delete()
 
         except Exception:
-
             pass
     except Exception as e:
         await msg.edit_msg(f"❌ Download failed: <code>{e}</code>")
     finally:
-        for p in (temp_file, target_path if 'target_path' in locals() else None):
+        for p in (temp_file, target_path if "target_path" in locals() else None):
             if p and os.path.exists(p):
                 try:
                     os.remove(p)

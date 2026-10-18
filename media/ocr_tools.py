@@ -7,7 +7,6 @@
 # All rights reserved.
 
 import os
-import io
 import shutil
 import base64
 from typing import Optional, Dict, Any, Tuple
@@ -17,6 +16,7 @@ from Main.core.types.message import Message
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     HAS_HTTPX = False
@@ -24,6 +24,7 @@ except ImportError:
 try:
     import pytesseract
     from PIL import Image
+
     HAS_PYTESSERACT = True
 except ImportError:
     HAS_PYTESSERACT = False
@@ -78,7 +79,9 @@ async def _get_ocr_config() -> Dict[str, Any]:
     }
 
 
-async def _perform_custom_ai_ocr(file_bytes: bytes, filename: str, endpoint_url: str, api_key: Optional[str] = None) -> Tuple[Optional[str], Optional[str]]:
+async def _perform_custom_ai_ocr(
+    file_bytes: bytes, filename: str, endpoint_url: str, api_key: Optional[str] = None
+) -> Tuple[Optional[str], Optional[str]]:
     """Query user's self-hosted OCR AI model endpoint (e.g. FastAPI, Surya, PaddleOCR, vLLM/Ollama)."""
     headers = {"User-Agent": "FridayUserbot/1.0"}
     if api_key:
@@ -152,7 +155,9 @@ def _perform_local_tesseract(file_path: str, lang: str = "eng") -> Tuple[Optiona
         return None, f"Tesseract error: {e}"
 
 
-async def _perform_ocr_space(file_bytes: bytes, filename: str, api_key: str, lang: str = "eng", is_table: bool = False) -> Tuple[Optional[str], Optional[str]]:
+async def _perform_ocr_space(
+    file_bytes: bytes, filename: str, api_key: str, lang: str = "eng", is_table: bool = False
+) -> Tuple[Optional[str], Optional[str]]:
     """Query OCR Space API with user's key or default."""
     url = "https://api.ocr.space/parse/image"
     payload = {
@@ -209,7 +214,9 @@ async def ocr_image(c: Client, m: Message):
         return await m.handle_message("❌ <code>httpx</code> is required for OCR.")
 
     rm = m.reply_to_message or (await m.get_reply_message() if hasattr(m, "get_reply_message") else None)
-    if not rm or not (rm.photo or rm.sticker or (rm.file and rm.file.mime_type and rm.file.mime_type.startswith("image/"))):
+    if not rm or not (
+        rm.photo or rm.sticker or (rm.file and rm.file.mime_type and rm.file.mime_type.startswith("image/"))
+    ):
         return await m.handle_message("❌ Please reply to an image, screenshot, or document photo.")
 
     raw = m.user_input.strip() if m.user_input else ""
@@ -219,7 +226,6 @@ async def ocr_image(c: Client, m: Message):
     clean_lines = False
     force_tess = "-tess" in raw or "-tesseract" in raw
     force_custom = "-custom" in raw or "-ai" in raw
-    force_space = "-space" in raw
 
     if "-l" in raw:
         parts = raw.split("-l")
@@ -254,16 +260,19 @@ async def ocr_image(c: Client, m: Message):
 
         extracted_text = None
         engine_used = "Unknown"
-        err_detail = None
 
         # 1. Custom Self-Hosted AI Model Endpoint (if forced or configured)
-        if (force_custom or (config.get("custom_url") and config.get("prefer_engine") == "custom")) and config.get("custom_url"):
+        if (force_custom or (config.get("custom_url") and config.get("prefer_engine") == "custom")) and config.get(
+            "custom_url"
+        ):
             extracted_text, engine_used = await _perform_custom_ai_ocr(
                 file_bytes, os.path.basename(local_path), config["custom_url"], config.get("custom_key")
             )
 
         # 2. Local Tesseract (if forced or detected and preferred)
-        if not extracted_text and (force_tess or (_is_tesseract_available() and config.get("prefer_engine") == "tesseract")):
+        if not extracted_text and (
+            force_tess or (_is_tesseract_available() and config.get("prefer_engine") == "tesseract")
+        ):
             extracted_text, engine_used = _perform_local_tesseract(local_path, lang=lang)
 
         # 3. Fallback to OCR.Space (user custom key or default helloworld)
@@ -289,10 +298,7 @@ async def ocr_image(c: Client, m: Message):
         if target_trans:
             trans_result = await _translate_text(extracted_text, target_trans)
             if trans_result:
-                translation_block = (
-                    f"\n\n🌐 <b>Translation ({target_trans.upper()}):</b>\n"
-                    f"<code>{trans_result}</code>"
-                )
+                translation_block = f"\n\n🌐 <b>Translation ({target_trans.upper()}):</b>\n<code>{trans_result}</code>"
 
         header = (
             f"📄 <b>OCR Recognition Report</b>\n"
@@ -319,11 +325,9 @@ async def ocr_image(c: Client, m: Message):
                 reply_to=m.id,
             )
             try:
-
                 await msg.delete()
 
             except Exception:
-
                 pass
             if os.path.exists(txt_path):
                 os.remove(txt_path)
@@ -368,7 +372,9 @@ async def set_custom_ocr(c: Client, m: Message):
     raw = m.user_input.strip()
     if raw.lower() in ["off", "disable", "reset", "none"]:
         await ocr_db.update_one({"_id": "ocr_config"}, {"$unset": {"custom_url": "", "custom_key": ""}}, upsert=True)
-        return await m.handle_message("✅ <b>Custom OCR AI Endpoint disabled:</b> Using OCR.space and local Tesseract engines.")
+        return await m.handle_message(
+            "✅ <b>Custom OCR AI Endpoint disabled:</b> Using OCR.space and local Tesseract engines."
+        )
 
     parts = raw.split()
     url = parts[0]
@@ -398,9 +404,11 @@ async def set_custom_ocr(c: Client, m: Message):
 async def ocr_status(c: Client, m: Message):
     cfg = await _get_ocr_config()
     tess_avail = "✅ Available & Ready" if _is_tesseract_available() else "⚠️ Not installed (Cloud fallback active)"
-    
+
     key = cfg.get("api_key", "helloworld")
-    key_status = "Default (helloworld)" if key == "helloworld" else f"Custom ({key[:4]}***{key[-4:] if len(key)>8 else ''})"
+    key_status = (
+        "Default (helloworld)" if key == "helloworld" else f"Custom ({key[:4]}***{key[-4:] if len(key) > 8 else ''})"
+    )
 
     custom_url = cfg.get("custom_url") or "None (Disabled)"
     prefer = cfg.get("prefer_engine", "auto").capitalize()

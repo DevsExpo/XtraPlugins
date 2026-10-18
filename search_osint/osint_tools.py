@@ -1,6 +1,6 @@
-# Copyright (C) 2021-present by FridaySoftware@Github, < https://github.com/FridaySoftware >.
+# Copyright (C) 2021-present by DevsExpo@Github, < https://github.com/DevsExpo >.
 #
-# This file is part of < https://github.com/FridaySoftware/Friday > project,
+# This file is part of < https://github.com/DevsExpo/Friday > project,
 # and is released under the "GNU v3.0 License Agreement".
 # Please see < https://github.com/Altriux/Friday/blob/main/LICENSE >
 #
@@ -8,13 +8,14 @@
 
 import re
 import asyncio
-from typing import List, Dict, Tuple
+from typing import Tuple
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
 from Main.core.types.message import Message
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     HAS_HTTPX = False
@@ -59,7 +60,6 @@ async def osint_username_lookup(c: Client, m: Message):
     username = m.user_input.strip().lstrip("@")
     msg = await m.handle_message(f"🕵️ Scanning social networks for <code>@{username}</code>...")
 
-    results = []
     async with httpx.AsyncClient(timeout=10.0) as client:
         tasks = [_probe_platform(client, name, url, username) for name, url, _ in PLATFORMS]
         outcomes = await asyncio.gather(*tasks, return_exceptions=True)
@@ -74,8 +74,7 @@ async def osint_username_lookup(c: Client, m: Message):
 
     report = (
         f"🕵️ <b>OSINT Reconnaissance:</b> <code>@{username}</code>\n\n"
-        f"<b>Confirmed Profiles ({len(found_links)}):</b>\n"
-        + "\n".join(found_links)
+        f"<b>Confirmed Profiles ({len(found_links)}):</b>\n" + "\n".join(found_links)
     )
     await msg.edit_msg(report, disable_web_page_preview=True)
 
@@ -125,10 +124,7 @@ async def subdomains_lookup(c: Client, m: Message):
         if count > 30:
             body += f"\n<i>...and {count - 30} more subdomains</i>"
 
-        report = (
-            f"🌐 <b>Subdomain Enumeration ({count}):</b> <code>{domain}</code>\n\n"
-            f"{body}"
-        )
+        report = f"🌐 <b>Subdomain Enumeration ({count}):</b> <code>{domain}</code>\n\n{body}"
         await msg.edit_msg(report)
     except Exception as e:
         await msg.edit_msg(f"❌ Subdomain query error: <code>{e}</code>")
@@ -151,8 +147,15 @@ async def check_email_osint(c: Client, m: Message):
 
     domain = email.split("@")[1].lower()
     disposable_domains = {
-        "10minutemail.com", "guerrillamail.com", "tempmail.com", "throwawaymail.com",
-        "mailinator.com", "yopmail.com", "trashmail.com", "getairmail.com", "dispostable.com"
+        "10minutemail.com",
+        "guerrillamail.com",
+        "tempmail.com",
+        "throwawaymail.com",
+        "mailinator.com",
+        "yopmail.com",
+        "trashmail.com",
+        "getairmail.com",
+        "dispostable.com",
     }
 
     is_disposable = "⚠️ Yes (Disposable / Burner)" if domain in disposable_domains else "✅ Clean (Legitimate Domain)"

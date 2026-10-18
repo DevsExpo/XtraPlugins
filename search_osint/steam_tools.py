@@ -4,7 +4,6 @@
 # and is released under the "GNU v3.0 License Agreement".
 
 import httpx
-import html
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
 from Main.core.types.message import Message
@@ -79,7 +78,7 @@ async def steam_search_cmd(c: Client, m: Message):
         plat_str = ", ".join(plat_icons) if plat_icons else "PC"
 
         desc = app_info.get("short_description") or ""
-        desc_snippet = f"<i>\"{desc[:200]}...\"</i>" if desc else ""
+        desc_snippet = f'<i>"{desc[:200]}..."</i>' if desc else ""
 
         report = (
             f"🎮 <b><a href='{steam_url}'>{name}</a></b>\n\n"

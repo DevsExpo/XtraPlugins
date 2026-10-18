@@ -5,7 +5,7 @@
 
 import httpx
 import html
-from typing import Dict, List, Any
+from typing import Dict, List
 
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
@@ -54,15 +54,12 @@ async def dns_lookup_cmd(c: Client, m: Message):
         recs_str = "\n".join(f"  • <code>{html.escape(r)}</code>" for r in records[:5])
         blocks.append(f"<b>[{r_type} Records]:</b>\n{recs_str}")
 
-    report = (
-        f"🌐 <b>DNS Records:</b> <code>{domain}</code>\n\n"
-        + "\n\n".join(blocks)
-    )
+    report = f"🌐 <b>DNS Records:</b> <code>{domain}</code>\n\n" + "\n\n".join(blocks)
     await msg.edit_msg(report)
 
 
 @Friday.register_on_cmd(
-    ["whois", "domainwhois", "rdap"],
+    ["domainwhois", "domwhois", "rdaplookup"],
     cmd_help={
         "help": "Inspect domain registration, registrar, creation, and expiration dates via RDAP.",
         "example": "whois telegram.org\nwhois wikipedia.org",
@@ -81,7 +78,9 @@ async def whois_lookup_cmd(c: Client, m: Message):
         async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
             resp = await client.get(url)
             if resp.status_code != 200:
-                return await msg.edit_msg(f"❌ Could not retrieve WHOIS data for <code>{domain}</code> (HTTP {resp.status_code}).")
+                return await msg.edit_msg(
+                    f"❌ Could not retrieve WHOIS data for <code>{domain}</code> (HTTP {resp.status_code})."
+                )
             data = resp.json()
 
         handle = data.get("handle") or domain.upper()

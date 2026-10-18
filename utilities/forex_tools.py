@@ -4,7 +4,6 @@
 # and is released under the "GNU v3.0 License Agreement".
 
 import httpx
-from typing import Dict, Any
 
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
@@ -31,12 +30,16 @@ async def forex_convert_cmd(c: Client, m: Message):
             from_curr = tokens[1].upper()
             to_curr = tokens[2].upper()
         except ValueError:
-            return await m.handle_message("⚠️ <b>Usage:</b> <code>.forex &lt;amount&gt; &lt;FROM&gt; &lt;TO&gt;</code>\nExample: <code>.forex 100 USD EUR</code>")
+            return await m.handle_message(
+                "⚠️ <b>Usage:</b> <code>.forex &lt;amount&gt; &lt;FROM&gt; &lt;TO&gt;</code>\nExample: <code>.forex 100 USD EUR</code>"
+            )
     elif len(tokens) == 2:
         from_curr = tokens[0].upper()
         to_curr = tokens[1].upper()
     else:
-        return await m.handle_message("⚠️ <b>Usage:</b> <code>.forex &lt;amount&gt; &lt;FROM&gt; &lt;TO&gt;</code>\nExample: <code>.forex 100 USD EUR</code>")
+        return await m.handle_message(
+            "⚠️ <b>Usage:</b> <code>.forex &lt;amount&gt; &lt;FROM&gt; &lt;TO&gt;</code>\nExample: <code>.forex 100 USD EUR</code>"
+        )
 
     msg = await m.handle_message(f"💱 Fetching exchange rates for <b>{from_curr} ➔ {to_curr}</b>...")
 

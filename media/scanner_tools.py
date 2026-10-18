@@ -11,10 +11,10 @@ import asyncio
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
 from Main.core.types.message import Message
-from Main.utils.essentials import Essentials
 
 try:
-    from PIL import Image, ImageOps, ImageEnhance, ImageFilter
+    from PIL import Image, ImageOps, ImageEnhance
+
     HAS_PIL = True
 except ImportError:
     HAS_PIL = False
@@ -74,7 +74,9 @@ async def document_scan(c: Client, m: Message):
     out_scanned = f"temp/xtra_scanner/scanned_{m.id}.png"
 
     try:
-        await asyncio.get_running_loop().run_in_executor(None, lambda: _apply_scanner_effect(download_path, out_scanned))
+        await asyncio.get_running_loop().run_in_executor(
+            None, lambda: _apply_scanner_effect(download_path, out_scanned)
+        )
 
         if not os.path.exists(out_scanned):
             return await msg.edit_msg("❌ Scanner processing failed.")
@@ -87,11 +89,9 @@ async def document_scan(c: Client, m: Message):
             reply_to=m.id,
         )
         try:
-
             await msg.delete()
 
         except Exception:
-
             pass
     except Exception as e:
         await msg.edit_msg(f"❌ Error during document scanning: <code>{e}</code>")

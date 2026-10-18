@@ -11,7 +11,7 @@ import shutil
 import zipfile
 import tarfile
 import asyncio
-from typing import List, Tuple
+from typing import List
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
 from Main.core.types.message import Message
@@ -78,11 +78,9 @@ async def archive_zip(c: Client, m: Message):
             reply_to=m.id,
         )
         try:
-
             await msg.delete()
 
         except Exception:
-
             pass
     except Exception as e:
         await msg.edit_msg(f"❌ Zip compression failed: <code>{e}</code>")
@@ -156,11 +154,9 @@ async def archive_unzip(c: Client, m: Message):
                         reply_to=m.id,
                     )
             try:
-
                 await msg.delete()
 
             except Exception:
-
                 pass
         else:
             # Re-upload the top 5 and give a full manifest
@@ -173,7 +169,12 @@ async def archive_unzip(c: Client, m: Message):
                         caption=f"📄 <code>{os.path.basename(f)}</code> ({Essentials.humanbytes(os.path.getsize(f))})",
                         reply_to=m.id,
                     )
-            manifest = "\n".join([f"• <code>{os.path.relpath(f, extract_dir)}</code> ({Essentials.humanbytes(os.path.getsize(f))})" for f in extracted[:25]])
+            manifest = "\n".join(
+                [
+                    f"• <code>{os.path.relpath(f, extract_dir)}</code> ({Essentials.humanbytes(os.path.getsize(f))})"
+                    for f in extracted[:25]
+                ]
+            )
             await msg.edit_msg(
                 f"✅ <b>Extracted {total_extracted} files.</b> Top entries:\n{manifest}\n"
                 f"<i>(Uploaded first 5 files to avoid flood)</i>"
@@ -312,11 +313,9 @@ async def archive_tar(c: Client, m: Message):
             reply_to=m.id,
         )
         try:
-
             await msg.delete()
 
         except Exception:
-
             pass
     except Exception as e:
         await msg.edit_msg(f"❌ Tar compression failed: <code>{e}</code>")

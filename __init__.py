@@ -59,7 +59,15 @@ Comprehensive modular toolbox structured into 5 specialized categories:
 
 6. Bot-Based (botbased/):
    - fban: Multi-federation ban (.fban), unban (.unfban), federation registry (.fadd, .frem, .flist), and Rose bot converser.
+
+7. AI Suite (ai/):
+   - ai_chat: Multi-provider conversational AI (Groq, Gemini, Ollama) with per-chat history, inline widget, and model switcher.
+   - ai_imagine: Zero-key AI image generation via Pollinations.ai with aspect-ratio presets, negative prompts, and inline generation.
+   - ai_tools: AI productivity commands (.aisumm, .aifix, .aiexplain, .airoast, .aitl, .aiask).
+
+8. Games & Entertainment (games/):
+   - tictactoe: Interactive inline Tic-Tac-Toe arena with minimax AI, PvP challenge, and win/loss stats.
+   - chess_game: Feature-packed chess engine with Unicode board, 2-tap move selection UI, solo vs AI, and PvP matches.
 """
 
-__version__ = "2.1.0"
-
+__version__ = "2.2.0"

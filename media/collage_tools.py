@@ -12,8 +12,8 @@ import shutil
 import zipfile
 import tarfile
 import subprocess
-from typing import List, Tuple, Optional
-from PIL import Image, ImageOps, ImageDraw, ImageFont
+from typing import List
+from PIL import Image, ImageOps
 
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
@@ -149,8 +149,14 @@ def _extract_frames_from_video(video_path: str, out_dir: str, num_frames: int = 
     try:
         # Get video duration using ffprobe
         probe_cmd = [
-            "ffprobe", "-v", "error", "-show_entries", "format=duration",
-            "-of", "default=noprint_wrappers=1:nokey=1", video_path
+            "ffprobe",
+            "-v",
+            "error",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "default=noprint_wrappers=1:nokey=1",
+            video_path,
         ]
         res = subprocess.run(probe_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         duration = float(res.stdout.strip()) if res.stdout.strip() else 10.0
@@ -162,8 +168,19 @@ def _extract_frames_from_video(video_path: str, out_dir: str, num_frames: int = 
         timestamp = round(i * interval, 2)
         frame_file = os.path.join(out_dir, f"frame_{i}.jpg")
         cmd = [
-            "ffmpeg", "-y", "-ss", str(timestamp), "-i", video_path,
-            "-vframes", "1", "-q:v", "2", "-loglevel", "error", frame_file
+            "ffmpeg",
+            "-y",
+            "-ss",
+            str(timestamp),
+            "-i",
+            video_path,
+            "-vframes",
+            "1",
+            "-q:v",
+            "2",
+            "-loglevel",
+            "error",
+            frame_file,
         ]
         try:
             subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -273,7 +290,11 @@ async def make_collage(c: Client, m: Message):
                     # If user requested a count or replied message had history, gather previous photos
                     if fetch_count > 1:
                         async for prev_msg in c.iter_messages(chat_target, max_id=rm.id, limit=30):
-                            if prev_msg.photo or (prev_msg.file and prev_msg.file.mime_type and prev_msg.file.mime_type.startswith("image/")):
+                            if prev_msg.photo or (
+                                prev_msg.file
+                                and prev_msg.file.mime_type
+                                and prev_msg.file.mime_type.startswith("image/")
+                            ):
                                 pf = await prev_msg.download_media(temp_dir)
                                 if pf and os.path.exists(pf):
                                     collected_images.append(pf)
@@ -286,11 +307,15 @@ async def make_collage(c: Client, m: Message):
             async for chat_msg in c.iter_messages(chat_target, limit=40):
                 if chat_msg.id == m.id:
                     continue
-                if chat_msg.photo or (chat_msg.file and chat_msg.file.mime_type and chat_msg.file.mime_type.startswith("image/")):
+                if chat_msg.photo or (
+                    chat_msg.file and chat_msg.file.mime_type and chat_msg.file.mime_type.startswith("image/")
+                ):
                     pf = await chat_msg.download_media(temp_dir)
                     if pf and os.path.exists(pf):
                         collected_images.append(pf)
-                elif chat_msg.video or (chat_msg.file and chat_msg.file.mime_type and chat_msg.file.mime_type.startswith("video/")):
+                elif chat_msg.video or (
+                    chat_msg.file and chat_msg.file.mime_type and chat_msg.file.mime_type.startswith("video/")
+                ):
                     vf = await chat_msg.download_media(temp_dir)
                     if vf and os.path.exists(vf):
                         frames = _extract_frames_from_video(vf, temp_dir, num_frames=2)

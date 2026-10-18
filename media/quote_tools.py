@@ -7,20 +7,13 @@
 # All rights reserved.
 
 import os
-import io
 import datetime
-from typing import Optional, Tuple
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+from typing import Optional
+from PIL import Image, ImageDraw, ImageFont
 
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
 from Main.core.types.message import Message
-
-try:
-    import httpx
-    HAS_HTTPX = True
-except ImportError:
-    HAS_HTTPX = False
 
 THEMES = {
     "dark": {"bg": (24, 37, 51), "bubble": (33, 50, 68), "text": (255, 255, 255), "name": (100, 181, 246)},
@@ -33,7 +26,11 @@ THEMES = {
 
 
 def _get_font(size: int = 24, bold: bool = False):
-    font_names = ["arialbd.ttf" if bold else "arial.ttf", "DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf", "segoeui.ttf"]
+    font_names = [
+        "arialbd.ttf" if bold else "arial.ttf",
+        "DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf",
+        "segoeui.ttf",
+    ]
     for fn in font_names:
         try:
             return ImageFont.truetype(fn, size)
@@ -51,7 +48,7 @@ def _render_local_quote(
 ) -> str:
     """Render a clean Telegram-style speech bubble card locally with Pillow."""
     palette = THEMES.get(theme_key, THEMES["dark"])
-    
+
     font_name = _get_font(24, bold=True)
     font_text = _get_font(22, bold=False)
     font_time = _get_font(16, bold=False)
@@ -85,7 +82,7 @@ def _render_local_quote(
     avatar_size = 64
     pad = 20
 
-    bubble_width = max(280, min(500, max(len(l) * 13 for l in lines) + 60))
+    bubble_width = max(280, min(500, max(len(ln) * 13 for ln in lines) + 60))
     bubble_height = max(avatar_size, 40 + text_block_height + 25)
 
     canvas_width = avatar_size + bubble_width + (pad * 3)
@@ -154,13 +151,15 @@ def _render_local_quote(
 )
 async def generate_quote(c: Client, m: Message):
     rm = m.reply_to_message or (await m.get_reply_message() if hasattr(m, "get_reply_message") else None)
-    
+
     # Target message to quote
     target_msg = rm if rm else m
     quote_text = target_msg.text or (m.user_input.strip() if not rm else "")
 
     if not quote_text:
-        return await m.handle_message("❌ Please reply to a message containing text, or type text after <code>.quote &lt;text&gt;</code>.")
+        return await m.handle_message(
+            "❌ Please reply to a message containing text, or type text after <code>.quote &lt;text&gt;</code>."
+        )
 
     raw = m.user_input.strip() if m.user_input else ""
     theme = "dark"
@@ -213,7 +212,7 @@ async def generate_quote(c: Client, m: Message):
             stk_img = Image.open(out_file)
             stk_img.thumbnail((512, 512), Image.Resampling.LANCZOS)
             stk_img.save(webp_path, "WEBP")
-            
+
             await c.send_file(
                 target_chat,
                 webp_path,
@@ -230,14 +229,9 @@ async def generate_quote(c: Client, m: Message):
             )
 
         try:
-
-
             await msg.delete()
 
-
         except Exception:
-
-
             pass
     except Exception as e:
         await msg.edit_msg(f"❌ Quote generation failed: <code>{e}</code>")

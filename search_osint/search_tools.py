@@ -1,6 +1,6 @@
-# Copyright (C) 2021-present by FridaySoftware@Github, < https://github.com/FridaySoftware >.
+# Copyright (C) 2021-present by DevsExpo@Github, < https://github.com/DevsExpo >.
 #
-# This file is part of < https://github.com/FridaySoftware/Friday > project,
+# This file is part of < https://github.com/DevsExpo/Friday > project,
 # and is released under the "GNU v3.0 License Agreement".
 # Please see < https://github.com/Altriux/Friday/blob/main/LICENSE >
 #
@@ -9,7 +9,7 @@
 import os
 import re
 import urllib.parse
-from typing import List, Dict, Tuple, Optional
+from typing import Optional
 from bs4 import BeautifulSoup
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
@@ -17,6 +17,7 @@ from Main.core.types.message import Message
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     HAS_HTTPX = False
@@ -133,10 +134,7 @@ async def google_search(c: Client, m: Message):
         entries = []
         for i, (title, link, snip, dom) in enumerate(results[:limit], 1):
             clean_snip = snip[:180] + ("..." if len(snip) > 180 else "")
-            entries.append(
-                f"<b>{i}.</b> <a href='{link}'><b>{title}</b></a> <i>({dom})</i>\n"
-                f"   {clean_snip}"
-            )
+            entries.append(f"<b>{i}.</b> <a href='{link}'><b>{title}</b></a> <i>({dom})</i>\n   {clean_snip}")
 
         report = (
             f"🔍 <b>Web Search Results:</b> <code>{query}</code>\n"
@@ -150,7 +148,7 @@ async def google_search(c: Client, m: Message):
 
 
 @Friday.register_on_cmd(
-    ["img", "images", "gis"],
+    ["images", "googleimages", "gimage", "pics"],
     cmd_help={
         "help": "Search high-definition images and download them directly into Telegram.",
         "example": "img cyberpunk city or img -n 4 minimalist wallpaper",
@@ -189,8 +187,6 @@ async def image_search(c: Client, m: Message):
                 vqd = match.group(1)
 
         if not vqd:
-            # Fallback Unsplash zero-key search
-            un_url = f"https://api.unsplash.com/search/photos?query={urllib.parse.quote(raw)}&per_page={limit}&client_id=your_client_id"
             return await msg.edit_msg("❌ Could not obtain search session token.")
 
         # Step 2: Fetch Image Links
@@ -239,11 +235,9 @@ async def image_search(c: Client, m: Message):
 
         if sent_count > 0:
             try:
-
                 await msg.delete()
 
             except Exception:
-
                 pass
         else:
             await msg.edit_msg("❌ Failed to download found image links.")
@@ -252,7 +246,7 @@ async def image_search(c: Client, m: Message):
 
 
 @Friday.register_on_cmd(
-    ["reverse", "ris", "yandex", "grs"],
+    ["lens", "multireverse", "yandex", "sauce", "tineye"],
     cmd_help={
         "help": "Reverse image search replied photo/sticker across Google Lens, Yandex, Bing, TinEye, SauceNAO, and TraceMoe.",
         "example": "reverse (replying to photo/sticker/image)",
@@ -264,7 +258,9 @@ async def multi_reverse_search(c: Client, m: Message):
         return await m.handle_message("❌ <code>httpx</code> is required.")
 
     rm = m.reply_to_message or (await m.get_reply_message() if hasattr(m, "get_reply_message") else None)
-    if not rm or not (rm.photo or rm.sticker or (rm.file and rm.file.mime_type and rm.file.mime_type.startswith("image/"))):
+    if not rm or not (
+        rm.photo or rm.sticker or (rm.file and rm.file.mime_type and rm.file.mime_type.startswith("image/"))
+    ):
         return await m.handle_message("❌ Please reply to a photo, sticker, or image.")
 
     msg = await m.handle_message("🔍 Uploading media to high-speed visual reconnaissance engines...")

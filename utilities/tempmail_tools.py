@@ -1,6 +1,6 @@
-# Copyright (C) 2021-present by FridaySoftware@Github, < https://github.com/FridaySoftware >.
+# Copyright (C) 2021-present by DevsExpo@Github, < https://github.com/DevsExpo >.
 #
-# This file is part of < https://github.com/FridaySoftware/Friday > project,
+# This file is part of < https://github.com/DevsExpo/Friday > project,
 # and is released under the "GNU v3.0 License Agreement".
 # Please see < https://github.com/Altriux/Friday/blob/main/LICENSE >
 #
@@ -8,13 +8,13 @@
 
 import random
 import string
-from typing import Optional, Dict, Any, List
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
 from Main.core.types.message import Message
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     HAS_HTTPX = False
@@ -113,7 +113,9 @@ async def check_temp_mail(c: Client, m: Message):
     doc = await col.find_one({"user_id": user_id})
 
     if not doc or not doc.get("token"):
-        return await m.handle_message("❌ You have no active temporary mailbox. Generate one with <code>.tempmail</code> first.")
+        return await m.handle_message(
+            "❌ You have no active temporary mailbox. Generate one with <code>.tempmail</code> first."
+        )
 
     address = doc.get("address")
     token = doc.get("token")
@@ -121,6 +123,7 @@ async def check_temp_mail(c: Client, m: Message):
     if "-basic" not in m.user_args and "-text" not in m.user_args:
         try:
             from Main.utils.inline_helper import send_inline_widget
+
             if await send_inline_widget(c, m, f"tempmail:{user_id}"):
                 return
         except Exception:
@@ -159,18 +162,11 @@ async def check_temp_mail(c: Client, m: Message):
                 f"<b>• Preview:</b> <i>{intro[:200]}</i>"
             )
 
-        report = (
-            f"📬 <b>Inbox for:</b> <code>{address}</code>\n\n"
-            + "\n\n────────────────\n\n".join(entries)
-        )
+        report = f"📬 <b>Inbox for:</b> <code>{address}</code>\n\n" + "\n\n────────────────\n\n".join(entries)
         await msg.edit_msg(report)
     except Exception as e:
         await msg.edit_msg(f"❌ Inbox error: <code>{e}</code>")
 
-
-# ==========================================
-# Interactive Inline TempMail Handlers
-# ==========================================
 
 if getattr(Friday, "bot", None):
     import re

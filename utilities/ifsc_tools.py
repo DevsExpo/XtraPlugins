@@ -15,6 +15,7 @@ from Main.core.types.message import Message
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     HAS_HTTPX = False
@@ -34,7 +35,9 @@ async def ifsc_lookup(c: Client, m: Message):
 
     code = m.user_input.strip().upper()
     if len(code) != 11:
-        return await m.handle_message("❌ Invalid IFSC code. An IFSC code must be exactly 11 characters (e.g. <code>SBIN0000001</code>).")
+        return await m.handle_message(
+            "❌ Invalid IFSC code. An IFSC code must be exactly 11 characters (e.g. <code>SBIN0000001</code>)."
+        )
 
     msg = await m.handle_message(f"🏦 Looking up IFSC <code>{code}</code>...")
     api_url = f"https://ifsc.razorpay.com/{code}"

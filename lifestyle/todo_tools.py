@@ -7,10 +7,10 @@
 # All rights reserved.
 
 import time
-from typing import List, Dict, Any
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
 from Main.core.types.message import Message
+from XtraPlugins.ui_tokens import STATUS, TODO
 
 
 def _get_todo_col():
@@ -28,11 +28,13 @@ def _get_todo_col():
 async def todo_manager(c: Client, m: Message):
     col = _get_todo_col()
     user_id = m.sender_id or (getattr(c, "me", None) and c.me.id) or 0
+    pfx = getattr(m, "prefix", None) or getattr(Friday, "user_command_handler", ".") or "."
     raw = (m.user_input or "").strip()
 
     if not raw or raw.lower() == "list":
         try:
             from Main.utils.inline_helper import send_inline_widget
+
             if await send_inline_widget(c, m, "todo"):
                 return
         except Exception:
@@ -43,26 +45,33 @@ async def todo_manager(c: Client, m: Message):
 
         if not todos:
             return await m.handle_message(
-                "📝 <b>Todo List is currently empty!</b>\n"
-                "Add tasks using <code>.todo add &lt;task text&gt;</code>"
+                f"{TODO.MEMO} <b>Todo List is currently empty!</b>\n"
+                f"Add tasks using <code>{pfx}todo add &lt;task text&gt;</code>"
             )
 
         active = [t for t in todos if not t.get("done")]
         completed = [t for t in todos if t.get("done")]
 
-        lines = ["📋 <b>Your Task List</b>\n"]
+        lines = [f"{TODO.LIST} <b>Your Task List</b>\n"]
         if active:
             lines.append("<b>Active Tasks:</b>")
             for t in active:
-                prio = " 🔴" if t.get("high_prio") else ""
-                lines.append(f"<code>[{t.get('task_id', t.get('id', 1))}]</code> ⬜ {t['text']}{prio}")
+                prio = f" {TODO.HIGH_PRIO}" if t.get("high_prio") else ""
+                lines.append(f"<code>[{t.get('task_id', t.get('id', 1))}]</code> {TODO.PENDING} {t['text']}{prio}")
 
         if completed:
             lines.append("\n<b>Completed:</b>")
             for t in completed:
-                lines.append(f"<code>[{t.get('task_id', t.get('id', 1))}]</code> <s>✅ {t['text']}</s>")
+                lines.append(f"<code>[{t.get('task_id', t.get('id', 1))}]</code> <s>{TODO.DONE} {t['text']}</s>")
 
         lines.append(f"\n<i>Summary: {len(active)} pending, {len(completed)} completed</i>")
+        lines.append(
+            "\n📖 <b>CLI Navigation (Text Mode):</b>\n"
+            f"• <b>Add:</b> <code>{pfx}todo add &lt;task description&gt;</code>\n"
+            f"• <b>Done:</b> <code>{pfx}todo done &lt;task_id&gt;</code>\n"
+            f"• <b>Undone:</b> <code>{pfx}todo undone &lt;task_id&gt;</code>\n"
+            f"• <b>Delete:</b> <code>{pfx}todo del &lt;task_id&gt;</code>"
+        )
         return await m.handle_message("\n".join(lines))
 
     parts = raw.split(" ", 1)
@@ -71,7 +80,9 @@ async def todo_manager(c: Client, m: Message):
 
     if action in ("add", "+", "new"):
         if not content:
-            return await m.handle_message("❌ Please provide task description: <code>.todo add Buy groceries</code>")
+            return await m.handle_message(
+                f"❌ Please provide task description: <code>{pfx}todo add Buy groceries</code>"
+            )
 
         is_high = "!high" in content.lower()
         clean_text = content.replace("!high", "").replace("!HIGH", "").strip()
@@ -94,7 +105,7 @@ async def todo_manager(c: Client, m: Message):
 
     elif action in ("done", "check", "complete"):
         if not content.isdigit():
-            return await m.handle_message("❌ Specify task ID: <code>.todo done 1</code>")
+            return await m.handle_message(f"❌ Specify task ID: <code>{pfx}todo done 1</code>")
 
         target_id = int(content)
         res = await col.update_one(
@@ -109,7 +120,7 @@ async def todo_manager(c: Client, m: Message):
 
     elif action in ("undone", "uncheck"):
         if not content.isdigit():
-            return await m.handle_message("❌ Specify task ID: <code>.todo undone 1</code>")
+            return await m.handle_message(f"❌ Specify task ID: <code>{pfx}todo undone 1</code>")
 
         target_id = int(content)
         res = await col.update_one(
@@ -124,7 +135,7 @@ async def todo_manager(c: Client, m: Message):
 
     elif action in ("del", "delete", "rm", "remove"):
         if not content.isdigit():
-            return await m.handle_message("❌ Specify task ID: <code>.todo del 1</code>")
+            return await m.handle_message(f"❌ Specify task ID: <code>{pfx}todo del 1</code>")
 
         target_id = int(content)
         res = await col.delete_one({"user_id": user_id, "task_id": target_id})
@@ -141,7 +152,9 @@ async def todo_manager(c: Client, m: Message):
         else:
             res = await col.delete_many({"user_id": user_id, "done": True})
             count = getattr(res, "deleted_count", 0)
-            return await m.handle_message(f"🧹 <b>Cleared {count} completed task(s).</b> (Use <code>.todo clear all</code> to wipe active tasks too)")
+            return await m.handle_message(
+                f"🧹 <b>Cleared {count} completed task(s).</b> (Use <code>.todo clear all</code> to wipe active tasks too)"
+            )
 
     else:
         return await m.handle_message(
@@ -155,10 +168,6 @@ async def todo_manager(c: Client, m: Message):
         )
 
 
-# ==========================================
-# Interactive Inline Checklist Handlers
-# ==========================================
-
 if getattr(Friday, "bot", None):
     from telethon import custom
     from Main.utils.custom_filters import filters
@@ -169,21 +178,20 @@ if getattr(Friday, "bot", None):
         cursor = col.find({"user_id": user_id})
         todos = await cursor.to_list(length=None) if hasattr(cursor, "to_list") else [doc async for doc in cursor]
 
+        pfx = getattr(Friday, "user_command_handler", ".") or "."
         if not todos:
             text = (
-                "📝 <b>Your Todo Checklist is Empty!</b>\n\n"
-                "Add tasks using: <code>.todo add &lt;task description&gt;</code>"
+                f"{TODO.MEMO} <b>Your Todo Checklist is Empty!</b>\n\n"
+                f"Add tasks using: <code>{pfx}todo add &lt;task description&gt;</code>"
             )
-            buttons = [
-                [custom.Button.inline("🔄 Refresh", f"todo_ref_{user_id}".encode("utf-8"))]
-            ]
+            buttons = [[custom.Button.inline(f"{STATUS.REFRESH} Refresh", f"todo_ref_{user_id}".encode("utf-8"))]]
             return text, buttons
 
         active = [t for t in todos if not t.get("done")]
         completed = [t for t in todos if t.get("done")]
 
         text = (
-            f"📋 <b>Interactive Task Checklist</b>\n\n"
+            f"{TODO.LIST} <b>Interactive Task Checklist</b>\n\n"
             f"• <b>Pending:</b> <code>{len(active)}</code> | <b>Completed:</b> <code>{len(completed)}</code>\n"
             f"<i>Tap any task button below to toggle done / undone:</i>\n"
         )
@@ -193,16 +201,14 @@ if getattr(Friday, "bot", None):
         for t in display_todos:
             tid = t.get("task_id", 1)
             is_done = t.get("done", False)
-            icon = "✅" if is_done else "⬜"
-            prio = " 🔴" if t.get("high_prio") and not is_done else ""
+            icon = TODO.DONE if is_done else TODO.PENDING
+            prio = f" {TODO.HIGH_PRIO}" if t.get("high_prio") and not is_done else ""
             label = f"{icon} #{tid} {t['text'][:22]}{prio}"
-            btn_rows.append([
-                custom.Button.inline(label, f"todo_tgl_{user_id}_{tid}".encode("utf-8"))
-            ])
+            btn_rows.append([custom.Button.inline(label, f"todo_tgl_{user_id}_{tid}".encode("utf-8"))])
 
         control_row = [
-            custom.Button.inline("🧹 Clear Done", f"todo_clr_{user_id}".encode("utf-8")),
-            custom.Button.inline("🔄 Refresh", f"todo_ref_{user_id}".encode("utf-8")),
+            custom.Button.inline(f"{TODO.SWEEP} Clear Done", f"todo_clr_{user_id}".encode("utf-8")),
+            custom.Button.inline(f"{STATUS.REFRESH} Refresh", f"todo_ref_{user_id}".encode("utf-8")),
         ]
         btn_rows.append(control_row)
         return text, btn_rows
@@ -238,10 +244,7 @@ if getattr(Friday, "bot", None):
             doc = await col.find_one({"user_id": owner_user_id, "task_id": target_tid})
             if doc:
                 new_done = not doc.get("done", False)
-                await col.update_one(
-                    {"user_id": owner_user_id, "task_id": target_tid},
-                    {"$set": {"done": new_done}}
-                )
+                await col.update_one({"user_id": owner_user_id, "task_id": target_tid}, {"$set": {"done": new_done}})
                 state_str = "Completed! 🎉" if new_done else "Pending"
                 await cq.answer(f"Task #{target_tid} marked as {state_str}")
         elif action == "clr":
@@ -256,4 +259,3 @@ if getattr(Friday, "bot", None):
             await cq.edit(text, buttons=buttons, parse_mode="html")
         except Exception:
             pass
-

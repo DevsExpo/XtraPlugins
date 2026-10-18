@@ -7,7 +7,6 @@
 # All rights reserved.
 
 import os
-from typing import Optional, Dict, Tuple
 from PIL import Image, ImageDraw, ImageFont
 
 from Main import Friday
@@ -85,7 +84,7 @@ def _render_styled_carbon(
 
     char_w = 14
     line_h = 32
-    max_line_len = max(len(l) for l in lines)
+    max_line_len = max(len(ln) for ln in lines)
 
     lineno_col_w = 60 if show_lines else 20
     content_w = max(550, (max_line_len * char_w) + lineno_col_w + 60)

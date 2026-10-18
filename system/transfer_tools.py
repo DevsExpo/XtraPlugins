@@ -8,8 +8,6 @@
 
 import os
 import time
-import asyncio
-from typing import Optional
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
 from Main.core.types.message import Message
@@ -17,6 +15,7 @@ from Main.utils.essentials import Essentials
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     HAS_HTTPX = False
@@ -133,16 +132,14 @@ async def download_from_url(c: Client, m: Message):
             progress_callback=_upload_progress,
         )
         try:
-
             await msg.delete()
 
         except Exception:
-
             pass
     except Exception as e:
         await msg.edit_msg(f"❌ Transfer error: <code>{e}</code>")
     finally:
-        if 'out_path' in locals() and os.path.exists(out_path):
+        if "out_path" in locals() and os.path.exists(out_path):
             try:
                 os.remove(out_path)
             except Exception:
@@ -200,11 +197,9 @@ async def upload_local_file(c: Client, m: Message):
             progress_callback=_upload_progress,
         )
         try:
-
             await msg.delete()
 
         except Exception:
-
             pass
     except Exception as e:
         await msg.edit_msg(f"❌ Upload failed: <code>{e}</code>")

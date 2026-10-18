@@ -1,12 +1,12 @@
-# Copyright (C) 2021-present by FridaySoftware@Github, < https://github.com/FridaySoftware >.
+# Copyright (C) 2021-present by DevsExpo@Github, < https://github.com/DevsExpo >.
 #
-# This file is part of < https://github.com/FridaySoftware/Friday > project,
+# This file is part of < https://github.com/DevsExpo/Friday > project,
 # and is released under the "GNU v3.0 License Agreement".
 
 import time
 import datetime
+import urllib.parse
 import httpx
-from typing import Dict, Any
 
 from Main import Friday
 from Main.core.types.client import FridayTelegramClient as Client
@@ -14,18 +14,35 @@ from Main.core.types.message import Message
 
 # Conversion ratios relative to SI base units
 LENGTH_FACTORS = {
-    "m": 1.0, "km": 1000.0, "cm": 0.01, "mm": 0.001,
-    "mi": 1609.344, "yd": 0.9144, "ft": 0.3048, "in": 0.0254,
+    "m": 1.0,
+    "km": 1000.0,
+    "cm": 0.01,
+    "mm": 0.001,
+    "mi": 1609.344,
+    "yd": 0.9144,
+    "ft": 0.3048,
+    "in": 0.0254,
 }
 MASS_FACTORS = {
-    "kg": 1.0, "g": 0.001, "mg": 0.000001,
-    "lb": 0.45359237, "oz": 0.028349523125, "ton": 1000.0,
+    "kg": 1.0,
+    "g": 0.001,
+    "mg": 0.000001,
+    "lb": 0.45359237,
+    "oz": 0.028349523125,
+    "ton": 1000.0,
 }
 DATA_FACTORS = {
-    "b": 1.0, "kb": 1024.0, "mb": 1024.0 ** 2, "gb": 1024.0 ** 3, "tb": 1024.0 ** 4,
+    "b": 1.0,
+    "kb": 1024.0,
+    "mb": 1024.0**2,
+    "gb": 1024.0**3,
+    "tb": 1024.0**4,
 }
 SPEED_FACTORS = {
-    "ms": 1.0, "kmh": 1.0 / 3.6, "mph": 0.44704, "knot": 0.514444,
+    "ms": 1.0,
+    "kmh": 1.0 / 3.6,
+    "mph": 0.44704,
+    "knot": 0.514444,
 }
 
 
@@ -73,10 +90,11 @@ def _convert_units(val: float, from_u: str, to_u: str):
     requires_input=True,
 )
 async def unit_convert_cmd(c: Client, m: Message):
-    tokens = m.user_input.strip().split()
+    tokens = [t for t in m.user_input.strip().split() if t.lower() != "to"]
     if len(tokens) < 3:
         return await m.handle_message(
-            "⚠️ <b>Usage:</b> <code>.convert &lt;value&gt; &lt;from_unit&gt; &lt;to_unit&gt;</code>\n"
+            "⚠️ <b>Usage:</b> <code>.convert &lt;value&gt; &lt;from_unit&gt; [to] &lt;to_unit&gt;</code>\n"
+            "• Examples: <code>.convert 100 km to miles</code>, <code>.convert 50 kg lb</code>\n"
             "• Length: <code>km, mi, m, ft, in, yd</code>\n"
             "• Weight: <code>kg, lb, g, oz</code>\n"
             "• Temp: <code>c, f, k</code>\n"
@@ -92,12 +110,11 @@ async def unit_convert_cmd(c: Client, m: Message):
     from_u, to_u = tokens[1], tokens[2]
     res, unit_str = _convert_units(val, from_u, to_u)
     if res is None:
-        return await m.handle_message(f"❌ Incompatible or unsupported units: <code>{from_u}</code> ➔ <code>{to_u}</code>.")
+        return await m.handle_message(
+            f"❌ Incompatible or unsupported units: <code>{from_u}</code> ➔ <code>{to_u}</code>."
+        )
 
-    report = (
-        f"📏 <b>Unit Conversion:</b>\n\n"
-        f"<b>{val:,.2f} {from_u.upper()}</b> = <b>{res:,.4f} {unit_str.upper()}</b>"
-    )
+    report = f"📏 <b>Unit Conversion:</b>\n\n<b>{val:,.2f} {from_u.upper()}</b> = <b>{res:,.4f} {unit_str.upper()}</b>"
     await m.handle_message(report)
 
 
@@ -112,24 +129,54 @@ async def unit_convert_cmd(c: Client, m: Message):
 async def world_time_cmd(c: Client, m: Message):
     raw = m.user_input.strip()
 
+    pfx = getattr(m, "prefix", ".") or "."
     if raw.lower().startswith("diff "):
         # Time difference mode
         cities = raw[5:].split()
         if len(cities) < 2:
-            return await m.handle_message("⚠️ <b>Usage:</b> <code>.time diff &lt;City1&gt; &lt;City2&gt;</code>")
+            return await m.handle_message(f"⚠️ <b>Usage:</b> <code>{pfx}time diff &lt;City1&gt; &lt;City2&gt;</code>")
         city1, city2 = cities[0], cities[1]
         msg = await m.handle_message(f"⏱ Calculating timezone difference between <b>{city1}</b> and <b>{city2}</b>...")
 
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            r1 = await client.get(f"https://wttr.in/{city1}?format=j1")
-            r2 = await client.get(f"https://wttr.in/{city2}?format=j1")
+        import zoneinfo
 
-        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        async def _get_city_info(client, c_name):
+            geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={urllib.parse.quote(c_name)}&count=1&language=en&format=json"
+            resp = await client.get(geo_url)
+            data = resp.json() if resp.status_code == 200 else {}
+            res = data.get("results", [])
+            return res[0] if res else None
+
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            info1 = await _get_city_info(client, city1)
+            info2 = await _get_city_info(client, city2)
+
+        if not info1 or not info2:
+            now_utc = datetime.datetime.now(datetime.timezone.utc)
+            return await msg.edit_msg(
+                f"⚠️ Could not resolve one of the locations (<b>{city1}</b> / <b>{city2}</b>).\n"
+                f"🕒 UTC: <code>{now_utc.strftime('%Y-%m-%d %H:%M:%S UTC')}</code>"
+            )
+
+        tz1 = zoneinfo.ZoneInfo(info1.get("timezone", "UTC"))
+        tz2 = zoneinfo.ZoneInfo(info2.get("timezone", "UTC"))
+        now1 = datetime.datetime.now(tz1)
+        now2 = datetime.datetime.now(tz2)
+        offset1 = now1.utcoffset() or datetime.timedelta(0)
+        offset2 = now2.utcoffset() or datetime.timedelta(0)
+        diff_hours = (offset2 - offset1).total_seconds() / 3600
+
+        ahead_str = (
+            f"{abs(diff_hours):g} hours ahead"
+            if diff_hours > 0
+            else (f"{abs(diff_hours):g} hours behind" if diff_hours < 0 else "same time")
+        )
+
         report = (
             f"🌐 <b>Time Difference Analysis:</b>\n\n"
-            f"📍 <b>City A:</b> <code>{city1.title()}</code>\n"
-            f"📍 <b>City B:</b> <code>{city2.title()}</code>\n\n"
-            f"🕒 Current UTC: <code>{now_utc.strftime('%Y-%m-%d %H:%M:%S UTC')}</code>"
+            f"📍 <b>{info1.get('name', city1)} ({info1.get('timezone', 'UTC')}):</b> <code>{now1.strftime('%I:%M %p, %b %d')}</code>\n"
+            f"📍 <b>{info2.get('name', city2)} ({info2.get('timezone', 'UTC')}):</b> <code>{now2.strftime('%I:%M %p, %b %d')}</code>\n\n"
+            f"⏱ <b>Comparison:</b> {info2.get('name', city2)} is <b>{ahead_str}</b> of {info1.get('name', city1)}."
         )
         return await msg.edit_msg(report)
 
@@ -154,6 +201,7 @@ async def world_time_cmd(c: Client, m: Message):
 
         # Fetch time in timezone
         import zoneinfo
+
         tz = zoneinfo.ZoneInfo(tz_name)
         now = datetime.datetime.now(tz)
         fmt_time = now.strftime("%I:%M:%S %p")
